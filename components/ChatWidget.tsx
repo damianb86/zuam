@@ -29,9 +29,6 @@ import { ZUAM_CONTACT_EMAIL } from "@/lib/zuam/knowledge";
 const assistantName =
   process.env.NEXT_PUBLIC_OPENAI_CHAT_ASSISTANT_NAME ||
   "Zuam AI Assistant";
-const configuredModelLabel =
-  process.env.NEXT_PUBLIC_OPENAI_CHAT_MODEL_LABEL ||
-  "GPT-5.4 Nano";
 const WELCOME_MESSAGE_ID = "zuam-welcome-message";
 const CONTACT_INITIAL_CAPTURE_DELAY_MS = getPositivePublicInteger(
   process.env.NEXT_PUBLIC_CHAT_CONTACT_INITIAL_CAPTURE_DELAY_MS,
@@ -545,9 +542,6 @@ export function ChatWidget() {
               <h2 className="truncate text-sm font-semibold text-ink">
                 {assistantName}
               </h2>
-              <p className="truncate text-xs font-medium text-slateText">
-                {configuredModelLabel}
-              </p>
             </div>
             <button
               type="button"
