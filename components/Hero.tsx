@@ -6,11 +6,11 @@ const proofPoints = ["Shopify apps", "Custom software", "Performance", "Applied 
 
 export function Hero() {
   return (
-    <section id="home" className="relative overflow-hidden pt-28 sm:pt-32 lg:pt-36">
+    <section id="home" className="home-section relative overflow-hidden pt-28 sm:pt-32 lg:pt-36">
       <div className="section-shell grid items-center gap-12 pb-16 lg:grid-cols-[1fr_0.9fr] lg:pb-20">
         <div className="max-w-3xl">
           <div className="mb-7 inline-flex items-center gap-3 rounded-full border border-ink/10 bg-white/80 px-4 py-2 text-sm font-semibold text-ink shadow-sm backdrop-blur">
-            <span className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-white">
+            <span className="brand-mark-shell grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-white">
               <Image
                 src="/logo.png"
                 alt="Zuam logo"

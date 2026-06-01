@@ -14,7 +14,7 @@ export function Footer() {
               className="inline-flex items-center gap-3 rounded-full focus:outline-none focus:ring-2 focus:ring-lavender focus:ring-offset-2 focus:ring-offset-ink"
               aria-label="Zuam home"
             >
-              <span className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-white">
+              <span className="brand-mark-shell grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-white">
                 <Image
                   src="/logo.png"
                   alt="Zuam logo"

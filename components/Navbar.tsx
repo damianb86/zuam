@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ArrowUpRight, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { navLinks } from "@/data/site";
+import { ThemeSwitch } from "@/components/ThemeSwitch";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -31,7 +32,7 @@ export function Navbar() {
           aria-label="Zuam home"
           onClick={() => setIsOpen(false)}
         >
-          <span className="grid h-11 w-11 place-items-center overflow-hidden rounded-full border border-ink/10 bg-white">
+          <span className="brand-mark-shell grid h-11 w-11 place-items-center overflow-hidden rounded-full border border-ink/10 bg-white">
             <Image
               src="/logo.png"
               alt="Zuam logo"
@@ -59,21 +60,25 @@ export function Navbar() {
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
+          <ThemeSwitch />
           <a href="#contact" className="button-primary">
             Let&apos;s talk
             <ArrowUpRight size={17} aria-hidden="true" />
           </a>
         </div>
 
-        <button
-          type="button"
-          className="grid h-11 w-11 place-items-center rounded-full border border-ink/10 bg-white text-ink shadow-sm transition hover:border-violet/40 focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2 lg:hidden"
-          aria-label={isOpen ? "Close navigation" : "Open navigation"}
-          aria-expanded={isOpen}
-          onClick={() => setIsOpen((value) => !value)}
-        >
-          {isOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
-        </button>
+        <div className="flex items-center gap-2 lg:hidden">
+          <ThemeSwitch />
+          <button
+            type="button"
+            className="grid h-11 w-11 place-items-center rounded-full border border-ink/10 bg-white text-ink shadow-sm transition hover:border-violet/40 focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2"
+            aria-label={isOpen ? "Close navigation" : "Open navigation"}
+            aria-expanded={isOpen}
+            onClick={() => setIsOpen((value) => !value)}
+          >
+            {isOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+          </button>
+        </div>
       </div>
 
       <div
