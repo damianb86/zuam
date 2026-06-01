@@ -176,7 +176,7 @@
     },
     {
       "name": "send_contact_email",
-      "description": "Use this client tool only after collecting at least name, email, and message. It sends the lead to Zuam if CONTACT_WEBHOOK_URL is configured; otherwise it returns a fallback with the contact email and form path."
+      "description": "Use this client tool only after collecting at least name, email, and message. It sends the lead to Zuam through the configured server-side contact delivery channel; otherwise it returns a fallback with the contact email and form path."
     }
   ],
   "apps": [

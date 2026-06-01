@@ -31,8 +31,8 @@ NEXT_PUBLIC_ZUAM_API_BASE_URL=http://127.0.0.1:3001/api npm run dev
 ```
 
 `OPENAI_API_KEY`, `OPENAI_CHAT_MODEL`, `OPENAI_CHAT_MAX_OUTPUT_TOKENS`,
-`CONTACT_WEBHOOK_URL`, `CONTACT_WEBHOOK_SECRET`, `EMAIL_HOST`, `EMAIL_USER`,
-and `EMAIL_PASS` are server-only variables. Never create
+`RESEND_API_KEY`, `CONTACT_WEBHOOK_URL`, `CONTACT_WEBHOOK_SECRET`,
+`EMAIL_HOST`, `EMAIL_USER`, and `EMAIL_PASS` are server-only variables. Never create
 `NEXT_PUBLIC_OPENAI_API_KEY`, `NEXT_PUBLIC_EMAIL_PASS`, or any other
 client-visible secret.
 
@@ -82,17 +82,29 @@ Disable chat email sending without disabling the normal chat:
 CHAT_CONTACT_EMAIL_ENABLED=false
 ```
 
-For direct lead delivery from the contact form, configure:
+For production email delivery with Resend, configure:
+
+```bash
+CONTACT_DELIVERY_METHOD=resend
+CONTACT_EMAIL=contact@zuam.com
+CONTACT_EMAIL_TO=contact@zuam.com
+RESEND_API_KEY=re_...
+RESEND_FROM=Zuam Website <noreply@zuam.dev>
+```
+
+Resend sends the message from `RESEND_FROM` and sets `reply_to` to the
+visitor's email address, so replying from the inbox reaches the visitor.
+
+For optional webhook delivery from the contact form, configure:
 
 ```bash
 CONTACT_WEBHOOK_URL=https://your-webhook-or-form-endpoint
 CONTACT_WEBHOOK_SECRET=optional-bearer-token
 ```
 
-For SMTP delivery, configure:
+For optional SMTP fallback, configure:
 
 ```bash
-CONTACT_DELIVERY_METHOD=auto
 CONTACT_EMAIL=contact@zuam.com
 CONTACT_EMAIL_TO=contact@zuam.com
 EMAIL_HOST=smtp.gmail.com
@@ -103,12 +115,13 @@ EMAIL_PASS=your-google-app-password
 EMAIL_FROM_NAME=Zuam Website
 ```
 
-`CONTACT_DELIVERY_METHOD=auto` uses SMTP when SMTP is configured, otherwise it
-uses the webhook when configured. You can force one channel with `smtp` or
-`webhook`, or send to both with `both`.
+`CONTACT_DELIVERY_METHOD=auto` uses Resend when configured, then SMTP, then the
+webhook. You can force one channel with `resend`, `smtp`, or `webhook`, or send
+to both email and webhook with `both`. With `both`, the email channel uses
+Resend when available and SMTP otherwise.
 
-If neither webhook nor SMTP is configured, the normal contact form returns a
-fallback with the contact email instead of claiming delivery.
+If neither Resend, webhook, nor SMTP is configured, the normal contact form
+returns a fallback with the contact email instead of claiming delivery.
 
 ## Optional limits
 

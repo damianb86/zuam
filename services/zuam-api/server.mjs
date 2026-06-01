@@ -81,7 +81,9 @@ function getConfiguredModel() {
 function getContactDeliveryMethod() {
   const value = getOptionalEnv("CONTACT_DELIVERY_METHOD") || "auto";
 
-  return ["auto", "smtp", "webhook", "both"].includes(value) ? value : "auto";
+  return ["auto", "resend", "smtp", "webhook", "both"].includes(value)
+    ? value
+    : "auto";
 }
 
 function normalizeEmailRecipients(value) {
@@ -101,6 +103,29 @@ function getContactRecipients() {
       getOptionalEnv("CONTACT_EMAIL") ||
       CONTACT_EMAIL
   );
+}
+
+function getResendConfig() {
+  return {
+    apiKey: getOptionalEnv("RESEND_API_KEY"),
+    from: getOptionalEnv("RESEND_FROM") || "Zuam Website <noreply@zuam.dev>",
+    recipients: getContactRecipients(),
+    timeoutMs: Number.parseInt(process.env.RESEND_TIMEOUT_MS || "15000", 10)
+  };
+}
+
+function getMissingResendConfig(resend = getResendConfig()) {
+  return [
+    ["CONTACT_EMAIL or CONTACT_EMAIL_TO", resend.recipients.length ? "ok" : ""],
+    ["RESEND_API_KEY", resend.apiKey],
+    ["RESEND_FROM", resend.from]
+  ]
+    .filter(([, value]) => !value)
+    .map(([name]) => name);
+}
+
+function hasResendConfig() {
+  return getMissingResendConfig().length === 0;
 }
 
 function getSmtpConfig() {
@@ -688,6 +713,76 @@ async function sendContactLeadViaWebhook(lead) {
   return { channel: "webhook" };
 }
 
+async function sendContactLeadViaResend(lead) {
+  const resend = getResendConfig();
+  const missing = getMissingResendConfig(resend);
+
+  if (missing.length > 0) {
+    throw createError("Resend contact delivery is not configured.", 503, {
+      channel: "resend",
+      missing
+    });
+  }
+
+  const timeoutMs = Number.isFinite(resend.timeoutMs) && resend.timeoutMs > 0
+    ? resend.timeoutMs
+    : 15000;
+  const subject = `[Zuam] ${lead.subject}`;
+  const resendResponse = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resend.apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from: resend.from,
+      to: resend.recipients,
+      reply_to: lead.email,
+      subject,
+      text: buildContactEmailText(lead),
+      html: buildContactEmailHtml(lead),
+      headers: {
+        "X-Zuam-Contact-Source": lead.source,
+        "X-Zuam-Contact-Type": lead.type
+      },
+      tags: [
+        {
+          name: "source",
+          value:
+            lead.source.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 256) ||
+            "website"
+        },
+        {
+          name: "type",
+          value:
+            lead.type.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 256) ||
+            "contact"
+        }
+      ]
+    }),
+    signal: AbortSignal.timeout(timeoutMs)
+  });
+  const responseBody = await resendResponse.json().catch(() => null);
+
+  if (!resendResponse.ok) {
+    throw createError("Resend contact delivery failed.", 502, {
+      channel: "resend",
+      statusCode: resendResponse.status,
+      providerError:
+        responseBody?.message ||
+        responseBody?.error?.message ||
+        responseBody?.error ||
+        undefined
+    });
+  }
+
+  return {
+    channel: "resend",
+    recipients: resend.recipients,
+    id: responseBody?.id
+  };
+}
+
 async function sendContactLeadViaSmtp(lead) {
   const smtp = getSmtpConfig();
   const missing = getMissingSmtpConfig(smtp);
@@ -734,8 +829,13 @@ async function sendContactLeadViaSmtp(lead) {
 
 async function deliverContactLead(lead) {
   const method = getContactDeliveryMethod();
+  const resendConfigured = hasResendConfig();
   const smtpConfigured = hasSmtpConfig();
   const webhookConfigured = hasWebhookConfig();
+
+  if (method === "resend") {
+    return sendContactLeadViaResend(lead);
+  }
 
   if (method === "smtp") {
     return sendContactLeadViaSmtp(lead);
@@ -746,11 +846,29 @@ async function deliverContactLead(lead) {
   }
 
   if (method === "both") {
+    const emailDelivery = resendConfigured
+      ? sendContactLeadViaResend(lead)
+      : sendContactLeadViaSmtp(lead);
     const results = await Promise.all([
-      sendContactLeadViaSmtp(lead),
+      emailDelivery,
       sendContactLeadViaWebhook(lead)
     ]);
     return { channel: "both", results };
+  }
+
+  if (resendConfigured) {
+    try {
+      return await sendContactLeadViaResend(lead);
+    } catch (error) {
+      if (!smtpConfigured && !webhookConfigured) {
+        throw error;
+      }
+
+      log("warn", "resend_delivery_failed_using_fallback", {
+        status: error.status || 500,
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
   }
 
   if (smtpConfigured) {
@@ -772,7 +890,9 @@ async function deliverContactLead(lead) {
   }
 
   throw createError("Contact delivery is not configured yet.", 503, {
-    missing: ["CONTACT_WEBHOOK_URL or EMAIL_HOST/EMAIL_USER/EMAIL_PASS"]
+    missing: [
+      "RESEND_API_KEY or CONTACT_WEBHOOK_URL or EMAIL_HOST/EMAIL_USER/EMAIL_PASS"
+    ]
   });
 }
 

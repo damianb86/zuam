@@ -123,6 +123,39 @@ textarea {
     radial-gradient(circle at 30% 20%, rgba(155, 124, 255, 0.18), transparent 36%);
 }
 
+.hero-logo-panel {
+  cursor: pointer;
+}
+
+.hero-logo-orbit {
+  perspective: 900px;
+}
+
+.hero-logo-pulse {
+  transform-origin: center;
+  animation: hero-logo-heartbeat 3.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+.hero-logo-glow {
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.92) 0 30%, rgba(155, 124, 255, 0.24) 48%, transparent 72%),
+    radial-gradient(circle at 50% 60%, rgba(38, 184, 166, 0.22), transparent 64%);
+  filter: blur(16px);
+  transform: scale(0.92);
+  animation: hero-logo-glow 3.2s ease-in-out infinite;
+}
+
+.hero-logo-mark {
+  filter: drop-shadow(0 28px 42px rgba(7, 18, 38, 0.18));
+  transform-origin: center;
+  will-change: transform, filter;
+}
+
+.hero-logo-panel:hover .hero-logo-mark {
+  animation: hero-logo-spin 720ms both;
+}
+
 .float-slow {
   animation: float-slow 7s ease-in-out infinite;
 }
@@ -131,70 +164,60 @@ textarea {
   animation: float-slow 8s ease-in-out 1.2s infinite;
 }
 
-.logo-backdrop,
-.logo-half-left,
-.logo-half-right,
-.logo-center-star {
-  transform-box: fill-box;
-  transform-origin: center;
-  will-change: transform, opacity;
-}
-
-.logo-backdrop {
-  animation: logo-backdrop-breathe 14s ease-in-out infinite;
-}
-
-.logo-half-left {
-  animation: logo-half-left-drift 10s ease-in-out infinite;
-}
-
-.logo-half-right {
-  animation: logo-half-right-drift 10s ease-in-out 1.4s infinite;
-}
-
-.logo-center-star {
-  animation: logo-star-drift 7s ease-in-out infinite;
-}
-
-@keyframes logo-backdrop-breathe {
+@keyframes hero-logo-heartbeat {
   0%,
   100% {
-    opacity: 0.035;
-    transform: scale(0.985);
+    transform: scale(1);
   }
-  50% {
-    opacity: 0.075;
-    transform: scale(1.015);
+  14% {
+    transform: scale(1.035);
   }
-}
-
-@keyframes logo-half-left-drift {
-  0%,
-  100% {
-    transform: translate3d(-42px, -2px, 0) rotate(-0.35deg);
+  28% {
+    transform: scale(0.992);
   }
-  50% {
-    transform: translate3d(-18px, -7px, 0) rotate(0.45deg);
+  42% {
+    transform: scale(1.018);
+  }
+  56% {
+    transform: scale(1);
   }
 }
 
-@keyframes logo-half-right-drift {
+@keyframes hero-logo-glow {
   0%,
   100% {
-    transform: translate3d(42px, 2px, 0) rotate(0.35deg);
+    opacity: 0.68;
+    transform: scale(0.92);
   }
-  50% {
-    transform: translate3d(18px, 7px, 0) rotate(-0.45deg);
+  14% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  56% {
+    opacity: 0.72;
+    transform: scale(0.94);
   }
 }
 
-@keyframes logo-star-drift {
-  0%,
-  100% {
-    transform: translate3d(0, -3px, 0) rotate(0deg) scale(0.96);
+@keyframes hero-logo-spin {
+  0% {
+    filter: drop-shadow(0 28px 42px rgba(7, 18, 38, 0.18));
+    transform: rotate(0deg) scale(1);
+    animation-timing-function: cubic-bezier(0.32, 0, 0.68, 0);
   }
-  50% {
-    transform: translate3d(0, 5px, 0) rotate(18deg) scale(1.05);
+  58% {
+    filter: drop-shadow(0 32px 48px rgba(7, 18, 38, 0.2));
+    transform: rotate(300deg) scale(1.045);
+    animation-timing-function: cubic-bezier(0.2, 1, 0.32, 1);
+  }
+  78% {
+    filter: drop-shadow(0 26px 36px rgba(7, 18, 38, 0.18));
+    transform: rotate(354deg) scale(1.01);
+    animation-timing-function: cubic-bezier(0.12, 0, 0.39, 0);
+  }
+  100% {
+    filter: drop-shadow(0 28px 42px rgba(7, 18, 38, 0.18));
+    transform: rotate(360deg) scale(1);
   }
 }
 

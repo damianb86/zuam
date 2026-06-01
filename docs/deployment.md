@@ -23,8 +23,8 @@ to keep a public assistant responsive and inexpensive. Override
 latency profile.
 
 Contact delivery runs inside the existing `api` container. No extra mail
-container is required. Use SMTP for the simplest setup, or keep using a webhook
-if another service should receive leads.
+container is required. Use Resend for production email delivery, or keep SMTP
+and webhook settings as fallbacks if another service should receive leads.
 
 ## Local Static Build
 
@@ -98,14 +98,12 @@ NEXT_PUBLIC_CHAT_CONTACT_INITIAL_CAPTURE_DELAY_MS=12000
 NEXT_PUBLIC_CHAT_CONTACT_FOLLOWUP_CAPTURE_DELAY_MS=90000
 OPENAI_API_KEY=sk-...
 OPENAI_CHAT_MODEL=gpt-5.4-nano
-CONTACT_DELIVERY_METHOD=auto
+CONTACT_DELIVERY_METHOD=resend
 CHAT_CONTACT_EMAIL_ENABLED=true
 CONTACT_EMAIL=contact@zuam.com
 CONTACT_EMAIL_TO=contact@zuam.com
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your-google-account@gmail.com
-EMAIL_PASS=your-google-app-password
+RESEND_API_KEY=re_...
+RESEND_FROM=Zuam Website <noreply@zuam.dev>
 ```
 
 4. Make sure the shared Docker stack is already running and that the shared
@@ -118,8 +116,10 @@ docker ps | grep caddy
 
 5. Make sure DNS for `APP_HOST` points to this server.
 
-6. If you use Google SMTP, create an app password in the Google account used by
-`EMAIL_USER`; do not use the normal account password.
+6. If you use SMTP as a fallback, configure `EMAIL_HOST`, `EMAIL_PORT`,
+`EMAIL_USER`, `EMAIL_PASS`, and `EMAIL_FROM_NAME`. For Google SMTP, create an
+app password in the Google account used by `EMAIL_USER`; do not use the normal
+account password.
 
 7. Deploy:
 
