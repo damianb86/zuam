@@ -67,11 +67,10 @@ email and enough project details before sending. The email includes the user's
 message, the assistant's interpretation, requested outcome, and recent chat
 context.
 
-The browser also has a lead safety net: once the visitor is in a chat contact
-flow and has provided a valid email plus meaningful context, it sends a
-preliminary contact lead after
+The browser also has a lead safety net: once the visitor has provided a valid
+email plus meaningful project/business context, it sends a preliminary contact lead after
 `NEXT_PUBLIC_CHAT_CONTACT_INITIAL_CAPTURE_DELAY_MS`. If the visitor adds more
-details later and then goes inactive, it sends one follow-up after
+details later, it sends one follow-up after
 `NEXT_PUBLIC_CHAT_CONTACT_FOLLOWUP_CAPTURE_DELAY_MS`. If the visitor leaves the
 page before the first timer fires, the browser attempts one last preliminary
 capture with `sendBeacon`.
@@ -131,8 +130,8 @@ OPENAI_CHAT_REASONING_EFFORT=low
 OPENAI_CHAT_VERBOSITY=low
 CHAT_RATE_LIMIT_PER_MINUTE=12
 CONTACT_RATE_LIMIT_PER_MINUTE=5
-NEXT_PUBLIC_CHAT_CONTACT_INITIAL_CAPTURE_DELAY_MS=12000
-NEXT_PUBLIC_CHAT_CONTACT_FOLLOWUP_CAPTURE_DELAY_MS=90000
+NEXT_PUBLIC_CHAT_CONTACT_INITIAL_CAPTURE_DELAY_MS=1500
+NEXT_PUBLIC_CHAT_CONTACT_FOLLOWUP_CAPTURE_DELAY_MS=30000
 ```
 
 The API also limits request body size, trims individual message content, and

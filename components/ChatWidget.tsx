@@ -14,6 +14,7 @@ import Image from "next/image";
 import {
   type FormEvent,
   type KeyboardEvent,
+  type ReactNode,
   useCallback,
   useEffect,
   useRef,
@@ -32,12 +33,13 @@ const assistantName =
 const WELCOME_MESSAGE_ID = "zuam-welcome-message";
 const CONTACT_INITIAL_CAPTURE_DELAY_MS = getPositivePublicInteger(
   process.env.NEXT_PUBLIC_CHAT_CONTACT_INITIAL_CAPTURE_DELAY_MS,
-  12_000
+  1_500
 );
 const CONTACT_FOLLOWUP_CAPTURE_DELAY_MS = getPositivePublicInteger(
   process.env.NEXT_PUBLIC_CHAT_CONTACT_FOLLOWUP_CAPTURE_DELAY_MS,
-  90_000
+  30_000
 );
+const CONTACT_TOAST_DURATION_MS = 4_500;
 const CONTACT_MIN_CONTEXT_CHARS = 24;
 const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 const CONTACT_INTENT_PATTERN =
@@ -45,7 +47,7 @@ const CONTACT_INTENT_PATTERN =
 const CONTACT_OPT_OUT_PATTERN =
   /\b(no envies|no envíes|no mandes|no enviar|don't send|do not send|cancel|cancelar|forget it|olvidalo|olvídalo)\b/i;
 const CONTACT_SENT_PATTERN =
-  /\b(zuam received|team received|message was sent|email was sent|received your message|recibio el mensaje|recibio tu mensaje|mensaje fue enviado|email fue enviado)\b/i;
+  /\b(zuam received|team received|message was sent|email was sent|contact sent|received your message|recibio el mensaje|recibio tu mensaje|mensaje fue enviado|email fue enviado|contacto enviado|mensaje enviado)\b/i;
 
 type ChatRole = "user" | "assistant";
 
@@ -59,6 +61,8 @@ type ChatApiResponse = {
   message?: string;
   error?: string;
   details?: string;
+  contact_sent?: boolean;
+  contact_message?: string;
 };
 
 type ContactCaptureState = {
@@ -137,6 +141,127 @@ function getApiMessages(messages: ChatMessage[]) {
     .map(({ role, content }) => ({ role, content }));
 }
 
+function renderInlineMarkdown(text: string) {
+  const pattern = /(`[^`]+`|\*\*[^*]+?\*\*|__[^_]+?__|\*[^*\s][^*]*?\*|_[^_\s][^_]*?_)/g;
+  const nodes: ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(text))) {
+    const token = match[0];
+
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index));
+    }
+
+    if (token.startsWith("**") && token.endsWith("**")) {
+      nodes.push(
+        <strong key={`${match.index}-strong`}>{token.slice(2, -2)}</strong>
+      );
+    } else if (token.startsWith("__") && token.endsWith("__")) {
+      nodes.push(
+        <strong key={`${match.index}-strong-underscore`}>
+          {token.slice(2, -2)}
+        </strong>
+      );
+    } else if (token.startsWith("`") && token.endsWith("`")) {
+      nodes.push(
+        <code
+          key={`${match.index}-code`}
+          className="rounded bg-ink/10 px-1 py-0.5 text-[0.92em]"
+        >
+          {token.slice(1, -1)}
+        </code>
+      );
+    } else {
+      nodes.push(
+        <em key={`${match.index}-emphasis`}>{token.slice(1, -1)}</em>
+      );
+    }
+
+    lastIndex = match.index + token.length;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes.length ? nodes : text;
+}
+
+function renderMarkdown(content: string) {
+  const lines = content.split(/\r?\n/);
+  const blocks: ReactNode[] = [];
+  let index = 0;
+
+  while (index < lines.length) {
+    const line = lines[index];
+
+    if (!line.trim()) {
+      blocks.push(<div key={`space-${index}`} className="h-2" />);
+      index += 1;
+      continue;
+    }
+
+    const heading = line.match(/^\s{0,3}(#{1,3})\s+(.+)$/);
+    if (heading) {
+      blocks.push(
+        <p
+          key={`heading-${index}`}
+          className="font-semibold"
+        >
+          {renderInlineMarkdown(heading[2])}
+        </p>
+      );
+      index += 1;
+      continue;
+    }
+
+    if (/^\s*[-*]\s+/.test(line)) {
+      const items: string[] = [];
+      while (index < lines.length && /^\s*[-*]\s+/.test(lines[index])) {
+        items.push(lines[index].replace(/^\s*[-*]\s+/, ""));
+        index += 1;
+      }
+
+      blocks.push(
+        <ul key={`ul-${index}`} className="list-disc space-y-1 pl-5">
+          {items.map((item, itemIndex) => (
+            <li key={itemIndex}>{renderInlineMarkdown(item)}</li>
+          ))}
+        </ul>
+      );
+      continue;
+    }
+
+    if (/^\s*\d+\.\s+/.test(line)) {
+      const items: string[] = [];
+      while (index < lines.length && /^\s*\d+\.\s+/.test(lines[index])) {
+        items.push(lines[index].replace(/^\s*\d+\.\s+/, ""));
+        index += 1;
+      }
+
+      blocks.push(
+        <ol key={`ol-${index}`} className="list-decimal space-y-1 pl-5">
+          {items.map((item, itemIndex) => (
+            <li key={itemIndex}>{renderInlineMarkdown(item)}</li>
+          ))}
+        </ol>
+      );
+      continue;
+    }
+
+    blocks.push(
+      <p key={`p-${index}`} className="whitespace-pre-wrap break-words">
+        {renderInlineMarkdown(line)}
+      </p>
+    );
+    index += 1;
+  }
+
+  return blocks;
+}
+
 function normalizeContactText(value: string) {
   return value
     .normalize("NFD")
@@ -169,6 +294,10 @@ function hasContactIntent(messages: ChatMessage[]) {
 
     return CONTACT_INTENT_PATTERN.test(normalizeContactText(message.content));
   });
+}
+
+function hasUserMessage(messages: ChatMessage[]) {
+  return messages.some((message) => message.role === "user");
 }
 
 function hasContactOptOut(messages: ChatMessage[]) {
@@ -214,7 +343,7 @@ function getContactCaptureState(messages: ChatMessage[]): ContactCaptureState {
   const transcript = buildTranscript(messages);
 
   return {
-    contactFlowStarted: hasContactIntent(messages),
+    contactFlowStarted: hasUserMessage(messages) || hasContactIntent(messages),
     email: extractEmail(messages),
     meaningfulContext,
     transcript,
@@ -254,8 +383,7 @@ function inferUrgency(value: string) {
 
 function canCaptureContactState(state: ContactCaptureState) {
   return Boolean(
-    state.contactFlowStarted &&
-      !state.optedOut &&
+    !state.optedOut &&
       state.email &&
       state.meaningfulContext.length >= CONTACT_MIN_CONTEXT_CHARS
   );
@@ -294,16 +422,18 @@ export function ChatWidget() {
       id: WELCOME_MESSAGE_ID,
       role: "assistant",
       content:
-        "Hi, I'm Zuam's assistant. I can help you understand our services, Shopify apps, applied AI work, and how to contact the team."
+        "Hi, I'm Zuam's assistant. To help you quickly and follow up, please share your name, email, and what you want to build, improve, or automate."
     }
   ]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [chatError, setChatError] = useState("");
+  const [toastMessage, setToastMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const initialCaptureFingerprintRef = useRef("");
   const followupCaptureFingerprintRef = useRef("");
   const contactCaptureInFlightRef = useRef(false);
+  const toastTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -312,6 +442,28 @@ export function ChatWidget() {
 
     messagesEndRef.current?.scrollIntoView({ block: "end" });
   }, [isOpen, isSending, messages]);
+
+  const showContactToast = useCallback((message?: string) => {
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+
+    setToastMessage(
+      message || "Mensaje enviado al contacto. Pronto nos comunicaremos."
+    );
+    toastTimerRef.current = window.setTimeout(() => {
+      setToastMessage("");
+      toastTimerRef.current = null;
+    }, CONTACT_TOAST_DURATION_MS);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
 
   const sendContactCapture = useCallback(async ({
     captureType,
@@ -324,7 +476,7 @@ export function ChatWidget() {
     contactCaptureInFlightRef.current = true;
 
     try {
-      await fetch(getZuamApiUrl("contact"), {
+      const response = await fetch(getZuamApiUrl("contact"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -333,12 +485,20 @@ export function ChatWidget() {
           buildContactCaptureRequestBody({ captureType, state })
         )
       });
+
+      if (response.ok) {
+        showContactToast(
+          captureType === "initial"
+            ? "Mensaje enviado al contacto. Pronto nos comunicaremos."
+            : "Información agregada al contacto enviado."
+        );
+      }
     } catch {
       // This safety net should never interrupt the visible chat flow.
     } finally {
       contactCaptureInFlightRef.current = false;
     }
-  }, []);
+  }, [showContactToast]);
 
   useEffect(() => {
     const state = getContactCaptureState(messages);
@@ -490,6 +650,10 @@ export function ChatWidget() {
         throw new Error(getChatErrorMessage(data));
       }
 
+      if (data.contact_sent) {
+        showContactToast(data.contact_message);
+      }
+
       setMessages((current) => [
         ...current,
         {
@@ -525,6 +689,15 @@ export function ChatWidget() {
 
   return (
     <div className="fixed bottom-5 right-5 z-[90] flex max-w-[calc(100vw-2.5rem)] flex-col items-end gap-4 sm:bottom-6 sm:right-6">
+      {toastMessage ? (
+        <div
+          role="status"
+          className="fixed left-1/2 top-1/2 z-[110] w-[min(360px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-[8px] border border-ink/10 bg-ink px-5 py-4 text-center text-sm font-semibold leading-6 text-white shadow-[0_24px_70px_rgba(7,18,38,0.28)]"
+        >
+          {toastMessage}
+        </div>
+      ) : null}
+
       {isOpen ? (
         <section
           className="relative flex h-[min(680px,calc(100vh-7rem))] w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-[8px] border border-ink/10 bg-white shadow-[0_28px_80px_rgba(7,18,38,0.24)] sm:w-[420px]"
@@ -588,9 +761,9 @@ export function ChatWidget() {
                         : "border border-ink/10 bg-white text-ink shadow-soft"
                     }`}
                   >
-                    <p className="whitespace-pre-wrap break-words">
-                      {message.content}
-                    </p>
+                    <div className="space-y-2">
+                      {renderMarkdown(message.content)}
+                    </div>
                   </div>
                 </div>
               ))}

@@ -288,6 +288,61 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+function extractEmailFromMessages(messages) {
+  for (const message of [...messages].reverse()) {
+    const match = message.content.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+
+    if (match && isValidEmail(match[0])) {
+      return match[0];
+    }
+  }
+
+  return "";
+}
+
+function getUserProvidedContext(messages) {
+  return messages
+    .filter((message) => message.role === "user")
+    .map((message) =>
+      message.content.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "").trim()
+    )
+    .filter(Boolean)
+    .join("\n")
+    .slice(0, 4000);
+}
+
+function countAssistantQuestionSets(messages) {
+  return messages.filter(
+    (message) => message.role === "assistant" && /\?/.test(message.content)
+  ).length;
+}
+
+function hasAssistantSentContact(messages) {
+  return messages.some(
+    (message) =>
+      message.role === "assistant" &&
+      /\b(contact sent|message was sent|email was sent|mensaje enviado|contacto enviado|zuam received|team received|recibio|recibió)\b/i.test(
+        message.content
+      )
+  );
+}
+
+function getLeadFlowRuntimeInstructions(messages) {
+  const hasEmail = Boolean(extractEmailFromMessages(messages));
+  const hasContext = getUserProvidedContext(messages).length >= 24;
+  const contactSent = hasAssistantSentContact(messages);
+  const questionSets = countAssistantQuestionSets(messages);
+
+  return `## Current lead-flow state
+
+- Valid reply email already provided: ${hasEmail ? "yes" : "no"}.
+- Meaningful project/business context already provided: ${hasContext ? "yes" : "no"}.
+- Contact message already sent in this conversation: ${contactSent ? "yes" : "no"}.
+- Assistant question sets already asked: ${questionSets}.
+
+Use this state to avoid repeating questions and to enforce the two-question-set limit. If assistant question sets already asked is 2 or more, do not ask any more questions; acknowledge briefly and point to follow-up by email.`;
+}
+
 function escapeHtml(value) {
   return String(value || "")
     .replace(/&/g, "&amp;")
@@ -374,7 +429,7 @@ All configured company knowledge is written in English. Respond in the user's la
 
 ## Role
 
-Help visitors understand Zuam, its Shopify work, its own Shopify apps, applied AI services, how Zuam works, and how to contact the company. Be useful, honest, technically credible, and conversion-oriented without sounding pushy.
+You are a commercial lead-capture assistant for Zuam. Your primary job is to get enough contact and project information for the Zuam team to follow up. Give brief business-relevant answers only when they help move the visitor toward contact and a concrete commercial next step.
 
 ## Brand profile
 
@@ -404,7 +459,7 @@ ${formatFaqs()}
 
 ## Qualification questions
 
-When a user seems interested in hiring Zuam, ask only 3 to 5 relevant questions.
+You may ask at most two question sets in the entire conversation. A question set is one assistant reply with one to three questions. Never ask a third question set.
 
 Shopify:
 ${formatList(zuamContent.qualificationQuestions.shopify)}
@@ -419,15 +474,21 @@ ${formatList(zuamContent.qualificationQuestions.apps)}
 
 Primary contact email: ${CONTACT_EMAIL}
 
-When a user asks how to contact Zuam for the first time, offer the contact form and the email address. If the user wants the chat to send a message directly, gather enough useful details before sending: name, reply email, company or project, what they need, why it matters, and the desired next step.
+All flows should move toward basic contact capture first. If the user starts with an informational question, answer in one short sentence if useful, then ask for name, reply email, and what they want to build, improve, or automate. Do not spend the conversation on general education.
 
-Once the user has started a direct-by-chat contact flow, stay in that flow. Do not keep suggesting the external form or direct email unless delivery fails, the user asks for alternatives, or the user explicitly says they do not want to continue through chat.
+The first question set should focus only on the minimum viable lead: name, reply email, company/project if any, and the business need. Keep it to one to three questions.
 
-The reply email is mandatory. If the user has not provided a valid email address, ask for it clearly and keep asking before using the contact tool. Other details are useful but not mandatory: if you already have a valid email and at least some meaningful project/context information, you may send a preliminary contact message instead of losing the lead.
+Once the user has provided a valid reply email and meaningful project/business context, use the ${CONTACT_TOOL_NAME} tool immediately. Do not ask for confirmation if the user has already shared the email and project context in this commercial chat. Do not claim the message was sent unless the tool succeeds.
 
-Use the ${CONTACT_TOOL_NAME} tool only after the user clearly asks or confirms that Zuam should receive the message, or when the direct-by-chat contact flow is already underway and the user has provided a valid reply email plus meaningful context. Do not use it for normal informational questions. If useful details are missing, ask one concise follow-up question; avoid sending a weak email unless the user appears ready to stop or has already given enough to preserve the lead.
+After the tool succeeds, start your next visible reply by telling the user that Zuam already received enough information to contact them and that the message was sent. Then, only if you have asked fewer than two question sets, ask one second optional question set with one to three questions to improve the follow-up. Make clear those extra answers are optional and only help Zuam respond more accurately.
 
-When using the contact tool, include the user's original request, your interpretation, the requested outcome, and recent chat context. After the tool succeeds, say that Zuam received the message and will follow up by email. If the tool fails, say the message could not be sent right now and offer the contact form or ${CONTACT_EMAIL}.
+If the user answers the second question set, acknowledge briefly and do not ask more questions. If the user does not answer the second question set, that is fine: the lead was already sent. If delivery fails, say the message could not be sent right now and offer the contact form or ${CONTACT_EMAIL}.
+
+When using the contact tool, include the user's original request, your interpretation, the requested outcome, and recent chat context.
+
+## Scope boundaries
+
+Only answer questions related to Zuam, Shopify, custom software, performance, conversion, SEO, applied AI, automation, integrations, apps, or hiring/contacting Zuam. If the user asks about weather, trivia, unrelated technical support, personal advice, or anything outside Zuam's business scope, politely refuse in one short sentence and redirect to what Zuam can help with. Do not answer the out-of-scope question.
 
 ## Limits
 
@@ -477,14 +538,14 @@ function getContactEmailToolDefinition() {
     type: "function",
     name: CONTACT_TOOL_NAME,
     description:
-      "Send a Zuam contact email from this chat. Use after the user clearly asks or agrees to send a message through chat, or when that direct-by-chat contact flow is already underway and the user has provided a valid reply email plus meaningful context. Include the user's original request, your interpretation, requested outcome, and relevant context. Do not use this for normal informational questions.",
+      "Send a Zuam contact email from this chat. Use as soon as the user has provided a valid reply email and meaningful business/project context, even if they did not explicitly ask to send. Include the user's original request, your interpretation, requested outcome, and relevant context.",
     parameters: {
       type: "object",
       properties: {
         user_confirmed_send: {
           type: "boolean",
           description:
-            "True only if the user explicitly asked to send the message or confirmed that Zuam should receive it."
+            "True when the user explicitly asked to send the message, confirmed that Zuam should receive it, or has provided a valid reply email plus meaningful business/project context in this commercial lead-capture chat."
         },
         subject: {
           type: "string",
@@ -948,7 +1009,8 @@ async function executeContactToolCall(call, request, messages) {
       output: JSON.stringify({
         sent: false,
         code: "missing_confirmation",
-        message: "Ask the user to confirm that Zuam should receive this message before sending."
+        message:
+          "Send only after a valid reply email and meaningful project context are available, or ask for the missing contact details."
       })
     };
   }
@@ -1093,7 +1155,7 @@ async function handleChat(request, response) {
 
   const payload = {
     model: getConfiguredModel(),
-    instructions: getZuamAssistantInstructions(),
+    instructions: `${getZuamAssistantInstructions()}\n\n${getLeadFlowRuntimeInstructions(messages)}`,
     input: messages,
     parallel_tool_calls: false
   };
@@ -1133,11 +1195,22 @@ async function handleChat(request, response) {
 
   let message = extractOutputText(data);
   const toolCalls = extractFunctionCalls(data);
+  let contactSent = false;
 
   if (toolCalls.length > 0) {
     const toolOutputs = [];
     for (const toolCall of toolCalls) {
-      toolOutputs.push(await executeContactToolCall(toolCall, request, messages));
+      const toolOutput = await executeContactToolCall(toolCall, request, messages);
+      toolOutputs.push(toolOutput);
+
+      try {
+        const parsedOutput = JSON.parse(toolOutput.output || "{}");
+        if (parsedOutput.sent) {
+          contactSent = true;
+        }
+      } catch {
+        // Ignore malformed tool output metadata; the model still receives it.
+      }
     }
 
     try {
@@ -1175,7 +1248,11 @@ async function handleChat(request, response) {
 
   return sendJson(request, response, 200, {
     message,
-    response_id: data?.id
+    response_id: data?.id,
+    contact_sent: contactSent,
+    contact_message: contactSent
+      ? "Mensaje enviado al contacto. Pronto nos comunicaremos."
+      : undefined
   });
 }
 
