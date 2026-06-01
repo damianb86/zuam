@@ -394,9 +394,13 @@ ${formatList(zuamContent.qualificationQuestions.apps)}
 
 Primary contact email: ${CONTACT_EMAIL}
 
-When a user asks how to contact Zuam, offer the contact form and the email address. If the user wants the chat to send a message directly, gather enough useful details before sending: name, reply email, company or project, what they need, why it matters, and the desired next step.
+When a user asks how to contact Zuam for the first time, offer the contact form and the email address. If the user wants the chat to send a message directly, gather enough useful details before sending: name, reply email, company or project, what they need, why it matters, and the desired next step.
 
-Use the ${CONTACT_TOOL_NAME} tool only after the user clearly asks or confirms that Zuam should receive the message. Do not use it for normal informational questions. If details are missing, ask one concise follow-up question instead of sending a weak email.
+Once the user has started a direct-by-chat contact flow, stay in that flow. Do not keep suggesting the external form or direct email unless delivery fails, the user asks for alternatives, or the user explicitly says they do not want to continue through chat.
+
+The reply email is mandatory. If the user has not provided a valid email address, ask for it clearly and keep asking before using the contact tool. Other details are useful but not mandatory: if you already have a valid email and at least some meaningful project/context information, you may send a preliminary contact message instead of losing the lead.
+
+Use the ${CONTACT_TOOL_NAME} tool only after the user clearly asks or confirms that Zuam should receive the message, or when the direct-by-chat contact flow is already underway and the user has provided a valid reply email plus meaningful context. Do not use it for normal informational questions. If useful details are missing, ask one concise follow-up question; avoid sending a weak email unless the user appears ready to stop or has already given enough to preserve the lead.
 
 When using the contact tool, include the user's original request, your interpretation, the requested outcome, and recent chat context. After the tool succeeds, say that Zuam received the message and will follow up by email. If the tool fails, say the message could not be sent right now and offer the contact form or ${CONTACT_EMAIL}.
 
@@ -448,7 +452,7 @@ function getContactEmailToolDefinition() {
     type: "function",
     name: CONTACT_TOOL_NAME,
     description:
-      "Send a Zuam contact email from this chat. Use only after the user clearly asks or agrees to send a message and provides a reply email plus enough project/contact details to make the email useful. Include the user's original request, your interpretation, requested outcome, and relevant context.",
+      "Send a Zuam contact email from this chat. Use after the user clearly asks or agrees to send a message through chat, or when that direct-by-chat contact flow is already underway and the user has provided a valid reply email plus meaningful context. Include the user's original request, your interpretation, requested outcome, and relevant context. Do not use this for normal informational questions.",
     parameters: {
       type: "object",
       properties: {
@@ -1078,7 +1082,7 @@ async function handleContact(request, response) {
   const name = cleanText(body.name, 120);
   const email = cleanText(body.email, 180);
   const company = cleanText(body.company, 160);
-  const message = cleanText(body.message, 4000);
+  const message = cleanText(body.message, 12000);
   const source = cleanText(body.source, 80) || "website";
   const missing = [
     name.length > 1 ? "" : "name",
@@ -1094,13 +1098,19 @@ async function handleContact(request, response) {
   }
 
   const lead = buildContactLead({
-    type: "website_contact_form",
-    subject: `Website contact from ${name}`,
+    type: cleanOptionalText(body.type, 80) || "website_contact_form",
+    subject:
+      cleanOptionalText(body.subject, 180) || `Website contact from ${name}`,
     name,
     email,
     company,
     message,
-    source
+    source,
+    assistantInterpretation: cleanOptionalText(body.assistantInterpretation, 4000),
+    requestedOutcome: cleanOptionalText(body.requestedOutcome, 1600),
+    projectType: cleanOptionalText(body.projectType, 160),
+    urgency: cleanOptionalText(body.urgency, 40),
+    transcript: cleanOptionalText(body.transcript, 12000)
   });
 
   let delivery;

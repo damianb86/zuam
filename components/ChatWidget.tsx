@@ -14,6 +14,7 @@ import Image from "next/image";
 import {
   type FormEvent,
   type KeyboardEvent,
+  useCallback,
   useEffect,
   useRef,
   useState
@@ -32,6 +33,22 @@ const configuredModelLabel =
   process.env.NEXT_PUBLIC_OPENAI_CHAT_MODEL_LABEL ||
   "GPT-5.4 Nano";
 const WELCOME_MESSAGE_ID = "zuam-welcome-message";
+const CONTACT_INITIAL_CAPTURE_DELAY_MS = getPositivePublicInteger(
+  process.env.NEXT_PUBLIC_CHAT_CONTACT_INITIAL_CAPTURE_DELAY_MS,
+  12_000
+);
+const CONTACT_FOLLOWUP_CAPTURE_DELAY_MS = getPositivePublicInteger(
+  process.env.NEXT_PUBLIC_CHAT_CONTACT_FOLLOWUP_CAPTURE_DELAY_MS,
+  90_000
+);
+const CONTACT_MIN_CONTEXT_CHARS = 24;
+const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
+const CONTACT_INTENT_PATTERN =
+  /\b(contact|contactar|contacten|contactame|contáctame|hablar|equipo|team|send|enviar|mandar|mail|email|e-mail|mensaje|message|cotizar|quote|proposal|propuesta|presupuesto|reunion|meeting|call|llamada|contratar|hire|project|proyecto)\b/i;
+const CONTACT_OPT_OUT_PATTERN =
+  /\b(no envies|no envíes|no mandes|no enviar|don't send|do not send|cancel|cancelar|forget it|olvidalo|olvídalo)\b/i;
+const CONTACT_SENT_PATTERN =
+  /\b(zuam received|team received|message was sent|email was sent|received your message|recibio el mensaje|recibio tu mensaje|mensaje fue enviado|email fue enviado)\b/i;
 
 type ChatRole = "user" | "assistant";
 
@@ -47,6 +64,36 @@ type ChatApiResponse = {
   details?: string;
 };
 
+type ContactCaptureState = {
+  contactFlowStarted: boolean;
+  email: string | null;
+  meaningfulContext: string;
+  transcript: string;
+  fingerprint: string;
+  optedOut: boolean;
+  contactAlreadySent: boolean;
+};
+
+type ContactCapturePayload = {
+  captureType: "initial" | "followup";
+  state: ContactCaptureState;
+};
+
+type ContactCaptureRequestBody = {
+  type: string;
+  subject: string;
+  name: string;
+  email: string;
+  company: string;
+  message: string;
+  source: string;
+  assistantInterpretation: string;
+  requestedOutcome: string;
+  projectType: string;
+  urgency: string;
+  transcript: string;
+};
+
 function createMessageId(role: ChatRole) {
   return `${role}-${Date.now().toString(36)}-${Math.random()
     .toString(36)
@@ -59,6 +106,12 @@ function getChatErrorMessage(data: ChatApiResponse | null) {
     data?.error ||
     "The assistant could not respond. Check the chat configuration."
   );
+}
+
+function getPositivePublicInteger(value: string | undefined, fallback: number) {
+  const parsed = Number.parseInt(value || "", 10);
+
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function getSuggestionIcon(icon: ZuamChatSuggestion["icon"]) {
@@ -87,6 +140,156 @@ function getApiMessages(messages: ChatMessage[]) {
     .map(({ role, content }) => ({ role, content }));
 }
 
+function normalizeContactText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractEmail(messages: ChatMessage[]) {
+  for (const message of [...messages].reverse()) {
+    if (message.role !== "user") {
+      continue;
+    }
+
+    const match = message.content.match(EMAIL_PATTERN);
+    if (match) {
+      return match[0];
+    }
+  }
+
+  return null;
+}
+
+function hasContactIntent(messages: ChatMessage[]) {
+  return messages.some((message) => {
+    if (message.id === WELCOME_MESSAGE_ID) {
+      return false;
+    }
+
+    return CONTACT_INTENT_PATTERN.test(normalizeContactText(message.content));
+  });
+}
+
+function hasContactOptOut(messages: ChatMessage[]) {
+  return messages.some((message) => {
+    if (message.role !== "user") {
+      return false;
+    }
+
+    return CONTACT_OPT_OUT_PATTERN.test(normalizeContactText(message.content));
+  });
+}
+
+function hasAssistantContactSentConfirmation(messages: ChatMessage[]) {
+  return messages.some((message) => {
+    if (message.role !== "assistant") {
+      return false;
+    }
+
+    return CONTACT_SENT_PATTERN.test(normalizeContactText(message.content));
+  });
+}
+
+function getMeaningfulUserContext(messages: ChatMessage[]) {
+  return messages
+    .filter((message) => message.role === "user")
+    .map((message) => message.content.replace(EMAIL_PATTERN, "").trim())
+    .filter((content) => content.length > 0)
+    .join("\n\n")
+    .slice(0, 4000);
+}
+
+function buildTranscript(messages: ChatMessage[]) {
+  return messages
+    .filter((message) => message.id !== WELCOME_MESSAGE_ID)
+    .slice(-12)
+    .map((message) => `${message.role.toUpperCase()}: ${message.content}`)
+    .join("\n\n")
+    .slice(0, 12000);
+}
+
+function getContactCaptureState(messages: ChatMessage[]): ContactCaptureState {
+  const meaningfulContext = getMeaningfulUserContext(messages);
+  const transcript = buildTranscript(messages);
+
+  return {
+    contactFlowStarted: hasContactIntent(messages),
+    email: extractEmail(messages),
+    meaningfulContext,
+    transcript,
+    fingerprint: `${meaningfulContext}\n\n${transcript}`,
+    optedOut: hasContactOptOut(messages),
+    contactAlreadySent: hasAssistantContactSentConfirmation(messages)
+  };
+}
+
+function inferProjectType(value: string) {
+  const text = normalizeContactText(value);
+
+  if (/\b(shopify|store|theme|liquid|checkout|app store)\b/.test(text)) {
+    return "Shopify";
+  }
+
+  if (/\b(ai|ia|automation|automatizacion|assistant|chatbot|workflow)\b/.test(text)) {
+    return "AI and automation";
+  }
+
+  if (/\b(performance|speed|seo|conversion|cro|analytics)\b/.test(text)) {
+    return "Performance and growth";
+  }
+
+  return "General project inquiry";
+}
+
+function inferUrgency(value: string) {
+  const text = normalizeContactText(value);
+
+  if (/\b(urgent|urgente|asap|hoy|today|now|ahora|critical|critico)\b/.test(text)) {
+    return "high";
+  }
+
+  return "normal";
+}
+
+function canCaptureContactState(state: ContactCaptureState) {
+  return Boolean(
+    state.contactFlowStarted &&
+      !state.optedOut &&
+      state.email &&
+      state.meaningfulContext.length >= CONTACT_MIN_CONTEXT_CHARS
+  );
+}
+
+function buildContactCaptureRequestBody({
+  captureType,
+  state
+}: ContactCapturePayload): ContactCaptureRequestBody {
+  return {
+    type: `ai_chat_auto_${captureType}`,
+    subject:
+      captureType === "initial"
+        ? "AI chat contact lead captured"
+        : "AI chat contact lead update",
+    name: "Chat visitor",
+    email: state.email || "",
+    company: "",
+    message: state.meaningfulContext,
+    source: `ai-chat-auto-${captureType}`,
+    assistantInterpretation:
+      captureType === "initial"
+        ? "The visitor started a direct contact flow in chat. This is an automatic preliminary capture to avoid losing the lead."
+        : "The visitor added more information after the initial chat lead capture. This is an automatic follow-up with a more complete transcript.",
+    requestedOutcome: "Follow up with the visitor by email.",
+    projectType: inferProjectType(state.fingerprint),
+    urgency: inferUrgency(state.fingerprint),
+    transcript: state.transcript
+  };
+}
+
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -101,6 +304,9 @@ export function ChatWidget() {
   const [isSending, setIsSending] = useState(false);
   const [chatError, setChatError] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const initialCaptureFingerprintRef = useRef("");
+  const followupCaptureFingerprintRef = useRef("");
+  const contactCaptureInFlightRef = useRef(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -109,6 +315,129 @@ export function ChatWidget() {
 
     messagesEndRef.current?.scrollIntoView({ block: "end" });
   }, [isOpen, isSending, messages]);
+
+  const sendContactCapture = useCallback(async ({
+    captureType,
+    state
+  }: ContactCapturePayload) => {
+    if (!state.email || contactCaptureInFlightRef.current) {
+      return;
+    }
+
+    contactCaptureInFlightRef.current = true;
+
+    try {
+      await fetch(getZuamApiUrl("contact"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(
+          buildContactCaptureRequestBody({ captureType, state })
+        )
+      });
+    } catch {
+      // This safety net should never interrupt the visible chat flow.
+    } finally {
+      contactCaptureInFlightRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    const state = getContactCaptureState(messages);
+
+    if (state.contactAlreadySent && !initialCaptureFingerprintRef.current) {
+      initialCaptureFingerprintRef.current = state.fingerprint;
+    }
+
+    const canCapture = canCaptureContactState(state);
+
+    if (!canCapture) {
+      return;
+    }
+
+    if (!initialCaptureFingerprintRef.current) {
+      const timer = window.setTimeout(() => {
+        const latestState = getContactCaptureState(messages);
+        if (
+          canCaptureContactState(latestState) &&
+          !initialCaptureFingerprintRef.current
+        ) {
+          initialCaptureFingerprintRef.current = latestState.fingerprint;
+          void sendContactCapture({
+            captureType: "initial",
+            state: latestState
+          });
+        }
+      }, CONTACT_INITIAL_CAPTURE_DELAY_MS);
+
+      return () => window.clearTimeout(timer);
+    }
+
+    if (state.fingerprint === followupCaptureFingerprintRef.current) {
+      return;
+    }
+
+    if (state.fingerprint === initialCaptureFingerprintRef.current) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const latestState = getContactCaptureState(messages);
+
+      if (
+        canCaptureContactState(latestState) &&
+        latestState.fingerprint !== initialCaptureFingerprintRef.current &&
+        latestState.fingerprint !== followupCaptureFingerprintRef.current
+      ) {
+        followupCaptureFingerprintRef.current = latestState.fingerprint;
+        void sendContactCapture({
+          captureType: "followup",
+          state: latestState
+        });
+      }
+    }, CONTACT_FOLLOWUP_CAPTURE_DELAY_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [messages, sendContactCapture]);
+
+  useEffect(() => {
+    const handlePageHide = () => {
+      const state = getContactCaptureState(messages);
+
+      if (!canCaptureContactState(state) || initialCaptureFingerprintRef.current) {
+        return;
+      }
+
+      initialCaptureFingerprintRef.current = state.fingerprint;
+      const body = JSON.stringify(
+        buildContactCaptureRequestBody({
+          captureType: "initial",
+          state
+        })
+      );
+      const blob = new Blob([body], { type: "application/json" });
+      const url = getZuamApiUrl("contact");
+
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(url, blob);
+        return;
+      }
+
+      void fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body,
+        keepalive: true
+      }).catch(() => {});
+    };
+
+    window.addEventListener("pagehide", handlePageHide);
+
+    return () => window.removeEventListener("pagehide", handlePageHide);
+  }, [messages]);
 
   const openContactForm = () => {
     setIsOpen(false);
