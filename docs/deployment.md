@@ -22,6 +22,10 @@ to keep a public assistant responsive and inexpensive. Override
 `OPENAI_CHAT_VERBOSITY` in `.env` when you want a different quality, cost, or
 latency profile.
 
+The API also runs semantic input and output scope guards using Structured
+Outputs. They are enabled by default and use `OPENAI_CHAT_MODEL` unless
+`OPENAI_SCOPE_GUARD_MODEL` is set.
+
 Contact delivery runs inside the existing `api` container. No extra mail
 container is required. Use Resend for production email delivery, or keep SMTP
 and webhook settings as fallbacks if another service should receive leads.
@@ -42,7 +46,8 @@ npm run api:dev
 ```
 
 `npm run api:dev` listens on port `3001` by default so it can run next to
-`npm run dev`. For local split testing, start the frontend with:
+`npm run dev` and loads `.env` plus `.env.local` automatically. For local split
+testing, start the frontend with:
 
 ```sh
 NEXT_PUBLIC_ZUAM_API_BASE_URL=http://127.0.0.1:3001/api npm run dev
@@ -98,6 +103,8 @@ NEXT_PUBLIC_CHAT_CONTACT_INITIAL_CAPTURE_DELAY_MS=1500
 NEXT_PUBLIC_CHAT_CONTACT_FOLLOWUP_CAPTURE_DELAY_MS=30000
 OPENAI_API_KEY=sk-...
 OPENAI_CHAT_MODEL=gpt-5.4-nano
+OPENAI_SCOPE_GUARD_ENABLED=true
+OPENAI_OUTPUT_GUARD_ENABLED=true
 CONTACT_DELIVERY_METHOD=resend
 CHAT_CONTACT_EMAIL_ENABLED=true
 CONTACT_EMAIL=contact@zuam.com

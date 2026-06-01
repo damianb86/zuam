@@ -14,13 +14,16 @@ OPENAI_API_KEY=sk-...
 OPENAI_CHAT_MODEL=gpt-5.4-nano
 OPENAI_CHAT_REASONING_EFFORT=low
 OPENAI_CHAT_VERBOSITY=low
+OPENAI_SCOPE_GUARD_ENABLED=true
+OPENAI_OUTPUT_GUARD_ENABLED=true
 NEXT_PUBLIC_OPENAI_CHAT_MODEL_LABEL=GPT-5.4 Nano
 NEXT_PUBLIC_OPENAI_CHAT_ASSISTANT_NAME=Zuam AI Assistant
 NEXT_PUBLIC_ZUAM_CONTACT_EMAIL=contact@zuam.com
 ```
 
-Restart the API service after changing server-side environment values. Rebuild
-the static site after changing `NEXT_PUBLIC_*` values.
+`npm run api:dev` loads `.env` and `.env.local` automatically. Restart the API
+service after changing server-side environment values. Rebuild the static site
+after changing `NEXT_PUBLIC_*` values.
 
 For local frontend development, run the API on its default development port and
 point the browser bundle at it:
@@ -31,6 +34,7 @@ NEXT_PUBLIC_ZUAM_API_BASE_URL=http://127.0.0.1:3001/api npm run dev
 ```
 
 `OPENAI_API_KEY`, `OPENAI_CHAT_MODEL`, `OPENAI_CHAT_MAX_OUTPUT_TOKENS`,
+`OPENAI_SCOPE_GUARD_MODEL`,
 `RESEND_API_KEY`, `CONTACT_WEBHOOK_URL`, `CONTACT_WEBHOOK_SECRET`,
 `EMAIL_HOST`, `EMAIL_USER`, and `EMAIL_PASS` are server-only variables. Never create
 `NEXT_PUBLIC_OPENAI_API_KEY`, `NEXT_PUBLIC_EMAIL_PASS`, or any other
@@ -41,6 +45,12 @@ client-visible secret.
 The API service keeps `OPENAI_API_KEY` server-side, sends the current chat
 messages to the OpenAI Responses API, and returns only the assistant text to
 the browser.
+
+Before the assistant answers, the API runs a semantic scope classifier with
+Structured Outputs. After the assistant drafts a reply, the API runs a second
+scope check over that draft. Both guards keep the chat focused on Zuam
+commercial intake and concise Zuam-specific information without relying on
+topic keyword lists.
 
 The assistant instructions and editable business knowledge live in:
 
@@ -128,6 +138,10 @@ returns a fallback with the contact email instead of claiming delivery.
 OPENAI_CHAT_MAX_OUTPUT_TOKENS=800
 OPENAI_CHAT_REASONING_EFFORT=low
 OPENAI_CHAT_VERBOSITY=low
+OPENAI_SCOPE_GUARD_ENABLED=true
+OPENAI_OUTPUT_GUARD_ENABLED=true
+OPENAI_SCOPE_GUARD_MODEL=
+OPENAI_SCOPE_GUARD_REASONING_EFFORT=low
 CHAT_RATE_LIMIT_PER_MINUTE=12
 CONTACT_RATE_LIMIT_PER_MINUTE=5
 NEXT_PUBLIC_CHAT_CONTACT_INITIAL_CAPTURE_DELAY_MS=1500

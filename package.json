@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "api:dev": "PORT=${PORT:-3001} node services/zuam-api/server.mjs",
+    "api:dev": "PORT=${PORT:-3001} node --env-file-if-exists=.env --env-file-if-exists=.env.local services/zuam-api/server.mjs",
     "build": "next build",
     "start": "npm run api:dev",
     "lint": "eslint . --max-warnings=0"
