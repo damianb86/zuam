@@ -16,11 +16,9 @@ No PostgreSQL database is required for the current public landing page. Add a
 database only if the product later needs persistent leads, chat history,
 analytics, or admin state.
 
-The chat defaults to `gpt-5.5` with low reasoning effort and low verbosity to
-keep a public assistant responsive and inexpensive. Override
-`OPENAI_CHAT_MODEL`, `OPENAI_CHAT_REASONING_EFFORT`, and
-`OPENAI_CHAT_VERBOSITY` in `.env` when you want a different quality/cost
-profile.
+The chat is pinned to `gpt-5.4-nano` with low reasoning effort and low
+verbosity to keep a public assistant responsive and inexpensive. The deploy
+script validates this model value before starting the containers.
 
 ## Local Static Build
 
@@ -62,8 +60,59 @@ nano .env
 - the nearest `shared-docker/.env`
 - this app's `.env`
 
-Then it validates `docker-compose.yml`, builds both images, and starts
-`static` and `api` on the shared `shared_apps` network.
+Then it pulls the latest GitHub commit, validates `docker-compose.yml`, builds
+both images, starts `static` and `api` on the shared `shared_apps` network, and
+checks the API health endpoint.
+
+## Server Checklist
+
+1. Clone the repository with Git, not as a ZIP download:
+
+```sh
+git clone https://github.com/damianb86/zuam.git
+cd zuam
+```
+
+2. Create the app env file:
+
+```sh
+cp .env.example .env
+nano .env
+```
+
+3. Set at least:
+
+```sh
+COMPOSE_PROJECT_NAME=zuam
+SHARED_DOCKER_NETWORK=shared_apps
+APP_HOST=your-domain.com
+NEXT_PUBLIC_ZUAM_API_BASE_URL=/api
+NEXT_PUBLIC_OPENAI_CHAT_MODEL_LABEL=GPT-5.4 Nano
+OPENAI_API_KEY=sk-...
+OPENAI_CHAT_MODEL=gpt-5.4-nano
+```
+
+4. Make sure the shared Docker stack is already running and that the shared
+network exists:
+
+```sh
+docker network inspect shared_apps
+docker ps | grep caddy
+```
+
+5. Make sure DNS for `APP_HOST` points to this server.
+
+6. Deploy:
+
+```sh
+./deploy.sh
+```
+
+For emergency deploys from the current files without pulling GitHub, run:
+
+```sh
+SKIP_GIT_PULL=1 ./deploy.sh
+```
 
 ## Add To Shared Deploy-All
 

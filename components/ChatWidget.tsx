@@ -30,7 +30,7 @@ const assistantName =
   "Zuam AI Assistant";
 const configuredModelLabel =
   process.env.NEXT_PUBLIC_OPENAI_CHAT_MODEL_LABEL ||
-  "GPT-5.5";
+  "GPT-5.4 Nano";
 const WELCOME_MESSAGE_ID = "zuam-welcome-message";
 
 type ChatRole = "user" | "assistant";
