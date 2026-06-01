@@ -688,11 +688,11 @@ export function ChatWidget() {
   const showSuggestions = messages.length === 1 && !isSending;
 
   return (
-    <div className="fixed bottom-5 right-5 z-[90] flex max-w-[calc(100vw-2.5rem)] flex-col items-end gap-4 sm:bottom-6 sm:right-6">
+    <div className="pointer-events-none fixed inset-0 z-[90]">
       {toastMessage ? (
         <div
           role="status"
-          className="fixed left-1/2 top-1/2 z-[110] w-[min(360px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-[8px] border border-ink/10 bg-ink px-5 py-4 text-center text-sm font-semibold leading-6 text-white shadow-[0_24px_70px_rgba(7,18,38,0.28)]"
+          className="pointer-events-auto fixed left-1/2 top-1/2 z-[110] w-[min(360px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-[8px] border border-ink/10 bg-ink px-5 py-4 text-center text-sm font-semibold leading-6 text-white shadow-[0_24px_70px_rgba(7,18,38,0.28)]"
         >
           {toastMessage}
         </div>
@@ -700,10 +700,10 @@ export function ChatWidget() {
 
       {isOpen ? (
         <section
-          className="relative flex h-[min(680px,calc(100vh-7rem))] w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-[8px] border border-ink/10 bg-white shadow-[0_28px_80px_rgba(7,18,38,0.24)] sm:w-[420px]"
+          className="chat-panel pointer-events-auto fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))] flex flex-col overflow-hidden rounded-[8px] border border-ink/10 bg-white shadow-[0_28px_80px_rgba(7,18,38,0.24)] sm:bottom-6 sm:left-auto sm:right-6 sm:top-auto sm:h-[min(680px,calc(100dvh-3rem))] sm:w-[420px]"
           aria-label={assistantName}
         >
-          <header className="flex items-center gap-3 border-b border-ink/10 bg-white px-4 py-3">
+          <header className="chat-panel-header flex items-center gap-2 border-b border-ink/10 bg-white px-3 py-3 sm:gap-3 sm:px-4">
             <Image
               src="/assets/ai-assistant-icon-gradient.png"
               alt=""
@@ -721,7 +721,7 @@ export function ChatWidget() {
               aria-label="Open contact form"
               title="Open contact form"
               onClick={openContactForm}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-slateText transition hover:bg-mist hover:text-ink focus:outline-none focus:ring-2 focus:ring-violet"
+              className="chat-icon-button grid h-9 w-9 shrink-0 place-items-center rounded-full text-slateText transition hover:bg-mist hover:text-ink focus:outline-none focus:ring-2 focus:ring-violet"
             >
               <MessageSquareText size={18} aria-hidden="true" />
             </button>
@@ -730,7 +730,7 @@ export function ChatWidget() {
               aria-label="Email Zuam"
               title="Email Zuam"
               onClick={openEmailClient}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-slateText transition hover:bg-mist hover:text-ink focus:outline-none focus:ring-2 focus:ring-violet"
+              className="chat-icon-button grid h-9 w-9 shrink-0 place-items-center rounded-full text-slateText transition hover:bg-mist hover:text-ink focus:outline-none focus:ring-2 focus:ring-violet"
             >
               <Mail size={18} aria-hidden="true" />
             </button>
@@ -739,13 +739,13 @@ export function ChatWidget() {
               aria-label="Close Zuam AI assistant"
               title="Close"
               onClick={() => setIsOpen(false)}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-slateText transition hover:bg-mist hover:text-ink focus:outline-none focus:ring-2 focus:ring-violet"
+              className="chat-icon-button grid h-9 w-9 shrink-0 place-items-center rounded-full text-slateText transition hover:bg-mist hover:text-ink focus:outline-none focus:ring-2 focus:ring-violet"
             >
               <X size={20} aria-hidden="true" />
             </button>
           </header>
 
-          <div className="flex-1 overflow-y-auto bg-mist/50 px-4 py-4">
+          <div className="chat-messages flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4">
             <div className="space-y-4" aria-live="polite">
               {messages.map((message) => (
                 <div
@@ -755,10 +755,10 @@ export function ChatWidget() {
                   }`}
                 >
                   <div
-                    className={`max-w-[86%] rounded-[8px] px-4 py-3 text-sm leading-6 ${
+                    className={`max-w-[90%] rounded-[8px] px-4 py-3 text-sm leading-6 sm:max-w-[86%] ${
                       message.role === "user"
-                        ? "bg-ink text-white"
-                        : "border border-ink/10 bg-white text-ink shadow-soft"
+                        ? "chat-bubble-user bg-ink text-white"
+                        : "chat-bubble-assistant border border-ink/10 bg-white text-ink shadow-soft"
                     }`}
                   >
                     <div className="space-y-2">
@@ -770,7 +770,7 @@ export function ChatWidget() {
 
               {isSending ? (
                 <div className="flex justify-start">
-                  <div className="rounded-[8px] border border-ink/10 bg-white px-4 py-3 text-sm font-medium text-slateText shadow-soft">
+                  <div className="chat-bubble-assistant rounded-[8px] border border-ink/10 bg-white px-4 py-3 text-sm font-medium text-slateText shadow-soft">
                     Thinking...
                   </div>
                 </div>
@@ -781,8 +781,8 @@ export function ChatWidget() {
           </div>
 
           {showSuggestions ? (
-            <div className="border-t border-ink/10 bg-white px-4 py-3">
-              <div className="grid gap-2 sm:grid-cols-2">
+            <div className="chat-suggestions border-t border-ink/10 bg-white px-3 py-3 sm:px-4">
+              <div className="grid max-h-[30dvh] gap-2 overflow-y-auto sm:max-h-none sm:grid-cols-2 sm:overflow-visible">
                 {ZUAM_CHAT_SUGGESTIONS.map((suggestion) => {
                   const SuggestionIcon = getSuggestionIcon(suggestion.icon);
 
@@ -791,7 +791,7 @@ export function ChatWidget() {
                       key={suggestion.prompt}
                       type="button"
                       onClick={() => void sendMessage(suggestion.prompt)}
-                      className="flex min-h-11 items-center gap-2 rounded-[8px] border border-ink/10 bg-white px-3 py-2 text-left text-xs font-semibold leading-5 text-ink transition hover:border-violet/50 hover:bg-paper focus:outline-none focus:ring-2 focus:ring-violet"
+                      className="chat-suggestion-button flex min-h-11 items-center gap-2 rounded-[8px] border border-ink/10 bg-white px-3 py-2 text-left text-xs font-semibold leading-5 text-ink transition hover:border-violet/50 hover:bg-paper focus:outline-none focus:ring-2 focus:ring-violet"
                     >
                       <SuggestionIcon
                         className="h-4 w-4 shrink-0 text-violet"
@@ -807,7 +807,7 @@ export function ChatWidget() {
 
           <form
             onSubmit={handleSubmit}
-            className="border-t border-ink/10 bg-white px-4 py-3"
+            className="chat-input-bar border-t border-ink/10 bg-white px-3 py-3 sm:px-4"
           >
             {chatError ? (
               <p
@@ -824,7 +824,7 @@ export function ChatWidget() {
                 onKeyDown={handleKeyDown}
                 placeholder="Ask about Shopify, apps, performance, AI, or custom software..."
                 rows={2}
-                className="max-h-32 min-h-14 flex-1 resize-none rounded-[8px] border border-ink/15 bg-white px-4 py-3 text-sm leading-5 text-ink outline-none transition placeholder:text-slateText/75 focus:border-violet focus:ring-2 focus:ring-violet/20"
+                className="chat-input max-h-28 min-h-14 flex-1 resize-none rounded-[8px] border border-ink/15 bg-white px-4 py-3 text-base leading-5 text-ink outline-none transition placeholder:text-slateText/75 focus:border-violet focus:ring-2 focus:ring-violet/20 sm:max-h-32 sm:text-sm"
               />
               <button
                 type="submit"
@@ -840,17 +840,15 @@ export function ChatWidget() {
         </section>
       ) : null}
 
-      <button
-        type="button"
-        aria-label={isOpen ? "Close Zuam AI assistant" : "Open Zuam AI assistant"}
-        aria-expanded={isOpen}
-        onClick={() => setIsOpen((value) => !value)}
-        className="group relative grid h-16 w-16 place-items-center overflow-hidden rounded-full border border-white/14 bg-black text-white shadow-[0_18px_45px_rgba(7,18,38,0.3)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_65px_rgba(7,18,38,0.36)] focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2"
-      >
-        <span className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_25%,rgba(155,124,255,0.32),transparent_42%)] opacity-90" />
-        {isOpen ? (
-          <X className="relative z-10" size={26} aria-hidden="true" />
-        ) : (
+      {!isOpen ? (
+        <button
+          type="button"
+          aria-label="Open Zuam AI assistant"
+          aria-expanded={isOpen}
+          onClick={() => setIsOpen(true)}
+          className="pointer-events-auto group fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] grid h-16 w-16 place-items-center overflow-hidden rounded-full border border-white/14 bg-black text-white shadow-[0_18px_45px_rgba(7,18,38,0.3)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_65px_rgba(7,18,38,0.36)] focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2 sm:bottom-6 sm:right-6"
+        >
+          <span className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_25%,rgba(155,124,255,0.32),transparent_42%)] opacity-90" />
           <Image
             src="/assets/ai-assistant-icon-gradient.png"
             alt=""
@@ -858,8 +856,8 @@ export function ChatWidget() {
             height={54}
             className="relative z-10 h-12 w-12 object-contain transition duration-300 group-hover:scale-105"
           />
-        )}
-      </button>
+        </button>
+      ) : null}
     </div>
   );
 }

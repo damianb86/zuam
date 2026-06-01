@@ -28,10 +28,15 @@ html.dark {
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 88px;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   min-height: 100vh;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
   background:
     radial-gradient(circle at 14% 10%, rgba(38, 184, 166, 0.12), transparent 30rem),
     radial-gradient(circle at 88% 12%, rgba(155, 124, 255, 0.16), transparent 34rem),
@@ -79,7 +84,7 @@ textarea {
   }
 
   .section-padding {
-    @apply py-20 sm:py-24 lg:py-28;
+    @apply py-16 sm:py-24 lg:py-28;
   }
 
   .surface-card {
@@ -288,6 +293,91 @@ html.dark .theme-switch-thumb {
   background: #9b7cff;
   box-shadow: 0 8px 22px rgba(155, 124, 255, 0.3);
   transform: translateX(1.84rem);
+}
+
+.chat-panel {
+  background: #ffffff;
+  color: #071226;
+  max-height: calc(100dvh - max(1.5rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+}
+
+.chat-panel-header,
+.chat-suggestions,
+.chat-input-bar {
+  background: #ffffff;
+}
+
+.chat-messages {
+  background: #f7f8fc;
+}
+
+.chat-bubble-assistant,
+.chat-suggestion-button,
+.chat-input {
+  background: #ffffff;
+  color: #071226;
+}
+
+.chat-bubble-user {
+  background: #071226;
+  color: #ffffff;
+}
+
+.chat-icon-button {
+  color: #5d6475;
+}
+
+.chat-icon-button:hover {
+  background: #f7f8fc;
+  color: #071226;
+}
+
+html.dark .chat-panel {
+  border-color: rgba(220, 228, 248, 0.18);
+  background: #071226;
+  color: #f8fbff;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
+}
+
+html.dark .chat-panel-header,
+html.dark .chat-suggestions,
+html.dark .chat-input-bar {
+  border-color: rgba(220, 228, 248, 0.16);
+  background: #0a1731;
+}
+
+html.dark .chat-messages {
+  background: #08142b;
+}
+
+html.dark .chat-bubble-assistant,
+html.dark .chat-suggestion-button,
+html.dark .chat-input {
+  border-color: rgba(220, 228, 248, 0.18);
+  background: #ffffff;
+  color: #071226;
+}
+
+html.dark .chat-bubble-assistant .text-slateText {
+  color: #5d6475;
+}
+
+html.dark .chat-bubble-user {
+  background: #9b7cff;
+  color: #ffffff;
+}
+
+html.dark .chat-icon-button {
+  color: #dce4f8;
+}
+
+html.dark .chat-icon-button:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+html.dark .chat-input::placeholder {
+  color: #5d6475;
 }
 
 .logo-image {
