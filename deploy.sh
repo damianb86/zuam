@@ -160,13 +160,6 @@ require_env_value "$APP_ENV_FILE" "COMPOSE_PROJECT_NAME"
 require_env_value "$APP_ENV_FILE" "APP_HOST"
 require_env_value "$APP_ENV_FILE" "OPENAI_API_KEY"
 
-MODEL_VALUE=$(get_env_value "$APP_ENV_FILE" "OPENAI_CHAT_MODEL")
-if [ "$MODEL_VALUE" != "gpt-5.4-nano" ]; then
-  echo "OPENAI_CHAT_MODEL must be gpt-5.4-nano for this site." >&2
-  echo "Current value in $APP_ENV_FILE: ${MODEL_VALUE:-<empty>}" >&2
-  exit 1
-fi
-
 NETWORK_NAME=$(get_env_value "$APP_ENV_FILE" "SHARED_DOCKER_NETWORK")
 if [ -z "$NETWORK_NAME" ]; then
   NETWORK_NAME=$(get_env_value "$SHARED_ENV_FILE" "SHARED_DOCKER_NETWORK")

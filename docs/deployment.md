@@ -16,9 +16,11 @@ No PostgreSQL database is required for the current public landing page. Add a
 database only if the product later needs persistent leads, chat history,
 analytics, or admin state.
 
-The chat is pinned to `gpt-5.4-nano` with low reasoning effort and low
-verbosity to keep a public assistant responsive and inexpensive. The deploy
-script validates this model value before starting the containers.
+The chat defaults to `gpt-5.4-nano` with low reasoning effort and low verbosity
+to keep a public assistant responsive and inexpensive. Override
+`OPENAI_CHAT_MODEL`, `OPENAI_CHAT_REASONING_EFFORT`, and
+`OPENAI_CHAT_VERBOSITY` in `.env` when you want a different quality, cost, or
+latency profile.
 
 ## Local Static Build
 
