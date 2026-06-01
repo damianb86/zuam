@@ -22,6 +22,10 @@ to keep a public assistant responsive and inexpensive. Override
 `OPENAI_CHAT_VERBOSITY` in `.env` when you want a different quality, cost, or
 latency profile.
 
+Contact delivery runs inside the existing `api` container. No extra mail
+container is required. Use SMTP for the simplest setup, or keep using a webhook
+if another service should receive leads.
+
 ## Local Static Build
 
 ```sh
@@ -92,6 +96,14 @@ NEXT_PUBLIC_ZUAM_API_BASE_URL=/api
 NEXT_PUBLIC_OPENAI_CHAT_MODEL_LABEL=GPT-5.4 Nano
 OPENAI_API_KEY=sk-...
 OPENAI_CHAT_MODEL=gpt-5.4-nano
+CONTACT_DELIVERY_METHOD=auto
+CHAT_CONTACT_EMAIL_ENABLED=true
+CONTACT_EMAIL=contact@zuam.com
+CONTACT_EMAIL_TO=contact@zuam.com
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-google-account@gmail.com
+EMAIL_PASS=your-google-app-password
 ```
 
 4. Make sure the shared Docker stack is already running and that the shared
@@ -104,7 +116,10 @@ docker ps | grep caddy
 
 5. Make sure DNS for `APP_HOST` points to this server.
 
-6. Deploy:
+6. If you use Google SMTP, create an app password in the Google account used by
+`EMAIL_USER`; do not use the normal account password.
+
+7. Deploy:
 
 ```sh
 ./deploy.sh

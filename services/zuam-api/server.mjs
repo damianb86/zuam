@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
+import nodemailer from "nodemailer";
 
 const contentUrl = new URL("../../data/zuamContent.json", import.meta.url);
 const zuamContent = JSON.parse(await readFile(contentUrl, "utf8"));
@@ -9,6 +10,7 @@ const MAX_BODY_BYTES = Number.parseInt(process.env.MAX_BODY_BYTES || "131072", 1
 const MAX_MESSAGES = 18;
 const MAX_MESSAGE_CHARS = 4000;
 const DEFAULT_MODEL = "gpt-5.4-nano";
+const CONTACT_TOOL_NAME = "send_zuam_contact_email";
 const REASONING_EFFORTS = new Set(["none", "low", "medium", "high", "xhigh"]);
 const VERBOSITY_LEVELS = new Set(["low", "medium", "high"]);
 const CONTACT_EMAIL =
@@ -58,12 +60,90 @@ function getAllowedEnv(name, allowedValues) {
   return value && allowedValues.has(value) ? value : undefined;
 }
 
+function getBooleanEnv(name, defaultValue = false) {
+  const raw = getOptionalEnv(name);
+
+  if (!raw) {
+    return defaultValue;
+  }
+
+  return ["1", "true", "yes", "on"].includes(raw.toLowerCase());
+}
+
 function getConfiguredModel() {
   return (
     getOptionalEnv("OPENAI_CHAT_MODEL") ||
     getOptionalEnv("NEXT_PUBLIC_OPENAI_CHAT_MODEL") ||
     DEFAULT_MODEL
   );
+}
+
+function getContactDeliveryMethod() {
+  const value = getOptionalEnv("CONTACT_DELIVERY_METHOD") || "auto";
+
+  return ["auto", "smtp", "webhook", "both"].includes(value) ? value : "auto";
+}
+
+function normalizeEmailRecipients(value) {
+  return [
+    ...new Set(
+      String(value || "")
+        .split(/[,\n;]/)
+        .map((item) => item.trim())
+        .filter(isValidEmail)
+    )
+  ];
+}
+
+function getContactRecipients() {
+  return normalizeEmailRecipients(
+    getOptionalEnv("CONTACT_EMAIL_TO") ||
+      getOptionalEnv("CONTACT_EMAIL") ||
+      CONTACT_EMAIL
+  );
+}
+
+function getSmtpConfig() {
+  const port = Number.parseInt(process.env.EMAIL_PORT || "587", 10);
+  const secure = getOptionalEnv("EMAIL_SECURE")
+    ? getBooleanEnv("EMAIL_SECURE")
+    : port === 465;
+
+  return {
+    host: getOptionalEnv("EMAIL_HOST"),
+    port: Number.isFinite(port) && port > 0 ? port : 587,
+    secure,
+    user: getOptionalEnv("EMAIL_USER"),
+    pass: getOptionalEnv("EMAIL_PASS"),
+    from: getOptionalEnv("EMAIL_FROM") || getOptionalEnv("EMAIL_USER"),
+    fromName: getOptionalEnv("EMAIL_FROM_NAME") || "Zuam Website",
+    recipients: getContactRecipients(),
+    timeoutMs: Number.parseInt(process.env.EMAIL_TIMEOUT_MS || "15000", 10)
+  };
+}
+
+function getMissingSmtpConfig(smtp = getSmtpConfig()) {
+  return [
+    ["CONTACT_EMAIL or CONTACT_EMAIL_TO", smtp.recipients.length ? "ok" : ""],
+    ["EMAIL_HOST", smtp.host],
+    ["EMAIL_USER", smtp.user],
+    ["EMAIL_PASS", smtp.pass],
+    ["EMAIL_FROM or EMAIL_USER", smtp.from]
+  ]
+    .filter(([, value]) => !value)
+    .map(([name]) => name);
+}
+
+function hasSmtpConfig() {
+  return getMissingSmtpConfig().length === 0;
+}
+
+function hasWebhookConfig() {
+  return Boolean(getOptionalEnv("CONTACT_WEBHOOK_URL"));
+}
+
+function isChatContactEmailEnabled() {
+  return getBooleanEnv("CHAT_CONTACT_EMAIL_ENABLED", true);
 }
 
 function getAllowedOrigins() {
@@ -174,8 +254,39 @@ function cleanText(value, maxLength) {
   return value.trim().slice(0, maxLength);
 }
 
+function cleanOptionalText(value, maxLength) {
+  const text = cleanText(value, maxLength);
+  return text || null;
+}
+
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function escapeHeaderValue(value) {
+  return String(value || "").replace(/[\r\n]+/g, " ").trim();
+}
+
+function formatEmailAddress(name, email) {
+  const safeEmail = escapeHeaderValue(email);
+  const safeName = escapeHeaderValue(name);
+
+  return safeName ? `"${safeName.replace(/"/g, "'")}" <${safeEmail}>` : safeEmail;
+}
+
+function createError(message, status = 500, details = {}) {
+  const error = new Error(message);
+  error.status = status;
+  Object.assign(error, details);
+  return error;
 }
 
 function formatList(items) {
@@ -283,9 +394,11 @@ ${formatList(zuamContent.qualificationQuestions.apps)}
 
 Primary contact email: ${CONTACT_EMAIL}
 
-When a user asks how to contact Zuam, offer the contact form and the email address. The website chat UI has separate contact buttons, but you do not have direct browser control from the model response.
+When a user asks how to contact Zuam, offer the contact form and the email address. If the user wants the chat to send a message directly, gather enough useful details before sending: name, reply email, company or project, what they need, why it matters, and the desired next step.
 
-Do not claim that an email has been sent from chat. If the user wants to send project details, ask them to use the contact form or email ${CONTACT_EMAIL}.
+Use the ${CONTACT_TOOL_NAME} tool only after the user clearly asks or confirms that Zuam should receive the message. Do not use it for normal informational questions. If details are missing, ask one concise follow-up question instead of sending a weak email.
+
+When using the contact tool, include the user's original request, your interpretation, the requested outcome, and recent chat context. After the tool succeeds, say that Zuam received the message and will follow up by email. If the tool fails, say the message could not be sent right now and offer the contact form or ${CONTACT_EMAIL}.
 
 ## Limits
 
@@ -324,6 +437,83 @@ function extractOutputText(data) {
   return parts.join("\n\n");
 }
 
+function extractFunctionCalls(data) {
+  return (data?.output || []).filter(
+    (item) => item?.type === "function_call" && item.call_id && item.name
+  );
+}
+
+function getContactEmailToolDefinition() {
+  return {
+    type: "function",
+    name: CONTACT_TOOL_NAME,
+    description:
+      "Send a Zuam contact email from this chat. Use only after the user clearly asks or agrees to send a message and provides a reply email plus enough project/contact details to make the email useful. Include the user's original request, your interpretation, requested outcome, and relevant context.",
+    parameters: {
+      type: "object",
+      properties: {
+        user_confirmed_send: {
+          type: "boolean",
+          description:
+            "True only if the user explicitly asked to send the message or confirmed that Zuam should receive it."
+        },
+        subject: {
+          type: "string",
+          description: "Short email subject, without the Zuam prefix."
+        },
+        user_name: {
+          type: ["string", "null"],
+          description: "The user's name if known."
+        },
+        reply_email: {
+          type: ["string", "null"],
+          description: "The user's email address for follow-up. Ask for it before sending if missing."
+        },
+        company: {
+          type: ["string", "null"],
+          description: "Company, shop, or project name if known."
+        },
+        project_type: {
+          type: ["string", "null"],
+          description: "Short category such as Shopify app, Shopify theme, AI workflow, performance, consulting, or other."
+        },
+        urgency: {
+          type: "string",
+          enum: ["low", "normal", "high", "unknown"],
+          description: "Urgency inferred from the user's request."
+        },
+        user_message: {
+          type: "string",
+          description: "The user's original request or the most relevant user-provided message."
+        },
+        assistant_interpretation: {
+          type: "string",
+          description:
+            "A concise interpretation of what the user needs, including useful context and assumptions."
+        },
+        requested_outcome: {
+          type: ["string", "null"],
+          description: "What the user wants Zuam to do next, if known."
+        }
+      },
+      required: [
+        "user_confirmed_send",
+        "subject",
+        "user_name",
+        "reply_email",
+        "company",
+        "project_type",
+        "urgency",
+        "user_message",
+        "assistant_interpretation",
+        "requested_outcome"
+      ],
+      additionalProperties: false
+    },
+    strict: true
+  };
+}
+
 function sendJson(request, response, status, body) {
   applyCors(request, response);
   response.writeHead(status, {
@@ -354,6 +544,397 @@ async function readJsonBody(request) {
   }
 
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+}
+
+function buildContactEmailText(lead) {
+  return [
+    "Zuam contact request",
+    "",
+    "Contact",
+    `- Name: ${lead.name || "Not provided"}`,
+    `- Email: ${lead.email}`,
+    `- Company/project: ${lead.company || "Not provided"}`,
+    `- Source: ${lead.source}`,
+    `- Submitted at: ${lead.submittedAt}`,
+    "",
+    "Subject",
+    lead.subject,
+    "",
+    "User message",
+    lead.message,
+    "",
+    lead.assistantInterpretation
+      ? ["Assistant interpretation", lead.assistantInterpretation].join("\n")
+      : "",
+    lead.requestedOutcome
+      ? ["Requested outcome", lead.requestedOutcome].join("\n")
+      : "",
+    lead.projectType ? `Project type: ${lead.projectType}` : "",
+    lead.urgency ? `Urgency: ${lead.urgency}` : "",
+    lead.transcript ? ["Recent chat transcript", lead.transcript].join("\n") : ""
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function buildContactEmailHtml(lead) {
+  const rows = [
+    ["Name", lead.name || "Not provided"],
+    ["Email", lead.email],
+    ["Company/project", lead.company || "Not provided"],
+    ["Source", lead.source],
+    ["Submitted at", lead.submittedAt],
+    ["Project type", lead.projectType || "Not specified"],
+    ["Urgency", lead.urgency || "Not specified"]
+  ]
+    .map(
+      ([label, value]) =>
+        `<tr><th align="left" style="padding:6px 12px 6px 0;">${escapeHtml(
+          label
+        )}</th><td style="padding:6px 0;">${escapeHtml(value)}</td></tr>`
+    )
+    .join("");
+
+  return `<!doctype html>
+<html>
+  <body style="font-family:Arial,sans-serif;line-height:1.5;color:#071226;">
+    <h2>Zuam contact request</h2>
+    <table>${rows}</table>
+    <h3>Subject</h3>
+    <p>${escapeHtml(lead.subject)}</p>
+    <h3>User message</h3>
+    <p>${escapeHtml(lead.message).replace(/\n/g, "<br>")}</p>
+    ${
+      lead.assistantInterpretation
+        ? `<h3>Assistant interpretation</h3><p>${escapeHtml(
+            lead.assistantInterpretation
+          ).replace(/\n/g, "<br>")}</p>`
+        : ""
+    }
+    ${
+      lead.requestedOutcome
+        ? `<h3>Requested outcome</h3><p>${escapeHtml(
+            lead.requestedOutcome
+          ).replace(/\n/g, "<br>")}</p>`
+        : ""
+    }
+    ${
+      lead.transcript
+        ? `<h3>Recent chat transcript</h3><pre style="white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;">${escapeHtml(
+            lead.transcript
+          )}</pre>`
+        : ""
+    }
+  </body>
+</html>`;
+}
+
+function buildContactLead(input) {
+  return {
+    type: cleanOptionalText(input.type, 80) || "contact_request",
+    subject: cleanOptionalText(input.subject, 180) || "Website contact request",
+    name: cleanOptionalText(input.name, 120),
+    email: cleanText(input.email, 180),
+    company: cleanOptionalText(input.company, 160),
+    message: cleanText(input.message, 12000),
+    source: cleanOptionalText(input.source, 80) || "website",
+    assistantInterpretation: cleanOptionalText(input.assistantInterpretation, 4000),
+    requestedOutcome: cleanOptionalText(input.requestedOutcome, 1600),
+    projectType: cleanOptionalText(input.projectType, 160),
+    urgency: cleanOptionalText(input.urgency, 40),
+    transcript: cleanOptionalText(input.transcript, 12000),
+    submittedAt: input.submittedAt || new Date().toISOString()
+  };
+}
+
+async function sendContactLeadViaWebhook(lead) {
+  const webhookUrl = getOptionalEnv("CONTACT_WEBHOOK_URL");
+
+  if (!webhookUrl) {
+    throw createError("Contact webhook is not configured.", 503, {
+      missing: ["CONTACT_WEBHOOK_URL"]
+    });
+  }
+
+  const deliveryResponse = await fetch(webhookUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(process.env.CONTACT_WEBHOOK_SECRET
+        ? { Authorization: `Bearer ${process.env.CONTACT_WEBHOOK_SECRET}` }
+        : {})
+    },
+    body: JSON.stringify({
+      ...lead,
+      contactEmail: CONTACT_EMAIL,
+      text: buildContactEmailText(lead)
+    }),
+    signal: AbortSignal.timeout(
+      Number.parseInt(process.env.CONTACT_WEBHOOK_TIMEOUT_MS || "15000", 10)
+    )
+  });
+
+  if (!deliveryResponse.ok) {
+    throw createError("Contact webhook delivery failed.", 502, {
+      channel: "webhook",
+      statusCode: deliveryResponse.status
+    });
+  }
+
+  return { channel: "webhook" };
+}
+
+async function sendContactLeadViaSmtp(lead) {
+  const smtp = getSmtpConfig();
+  const missing = getMissingSmtpConfig(smtp);
+
+  if (missing.length > 0) {
+    throw createError("SMTP contact delivery is not configured.", 503, {
+      channel: "smtp",
+      missing
+    });
+  }
+
+  const timeoutMs = Number.isFinite(smtp.timeoutMs) && smtp.timeoutMs > 0
+    ? smtp.timeoutMs
+    : 15000;
+  const transporter = nodemailer.createTransport({
+    host: smtp.host,
+    port: smtp.port,
+    secure: smtp.secure,
+    auth: {
+      user: smtp.user,
+      pass: smtp.pass
+    },
+    connectionTimeout: timeoutMs,
+    greetingTimeout: timeoutMs,
+    socketTimeout: timeoutMs
+  });
+  const subject = `[Zuam] ${lead.subject}`;
+
+  await transporter.sendMail({
+    from: formatEmailAddress(smtp.fromName, smtp.from),
+    to: smtp.recipients,
+    replyTo: lead.email,
+    subject,
+    text: buildContactEmailText(lead),
+    html: buildContactEmailHtml(lead),
+    headers: {
+      "X-Zuam-Contact-Source": lead.source,
+      "X-Zuam-Contact-Type": lead.type
+    }
+  });
+
+  return { channel: "smtp", recipients: smtp.recipients };
+}
+
+async function deliverContactLead(lead) {
+  const method = getContactDeliveryMethod();
+  const smtpConfigured = hasSmtpConfig();
+  const webhookConfigured = hasWebhookConfig();
+
+  if (method === "smtp") {
+    return sendContactLeadViaSmtp(lead);
+  }
+
+  if (method === "webhook") {
+    return sendContactLeadViaWebhook(lead);
+  }
+
+  if (method === "both") {
+    const results = await Promise.all([
+      sendContactLeadViaSmtp(lead),
+      sendContactLeadViaWebhook(lead)
+    ]);
+    return { channel: "both", results };
+  }
+
+  if (smtpConfigured) {
+    try {
+      return await sendContactLeadViaSmtp(lead);
+    } catch (error) {
+      if (!webhookConfigured) {
+        throw error;
+      }
+
+      log("warn", "smtp_delivery_failed_using_webhook_fallback", {
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  if (webhookConfigured) {
+    return sendContactLeadViaWebhook(lead);
+  }
+
+  throw createError("Contact delivery is not configured yet.", 503, {
+    missing: ["CONTACT_WEBHOOK_URL or EMAIL_HOST/EMAIL_USER/EMAIL_PASS"]
+  });
+}
+
+function formatChatTranscript(messages) {
+  return messages
+    .slice(-10)
+    .map((message) => `${message.role.toUpperCase()}: ${message.content}`)
+    .join("\n\n");
+}
+
+async function executeContactToolCall(call, request, messages) {
+  if (call.name !== CONTACT_TOOL_NAME) {
+    return {
+      type: "function_call_output",
+      call_id: call.call_id,
+      output: JSON.stringify({
+        sent: false,
+        code: "unknown_tool",
+        message: "Unknown tool."
+      })
+    };
+  }
+
+  const ip = getRequestIp(request);
+
+  if (isRateLimited(`chat-contact:${ip}`, contactRateLimit)) {
+    return {
+      type: "function_call_output",
+      call_id: call.call_id,
+      output: JSON.stringify({
+        sent: false,
+        code: "rate_limited",
+        message: "Too many contact email requests. Ask the user to wait and try again."
+      })
+    };
+  }
+
+  let args;
+  try {
+    args = JSON.parse(call.arguments || "{}");
+  } catch {
+    args = {};
+  }
+
+  const replyEmail = cleanText(args.reply_email, 180);
+  const userMessage = cleanText(args.user_message, 4000);
+  const assistantInterpretation = cleanText(args.assistant_interpretation, 4000);
+
+  if (!args.user_confirmed_send) {
+    return {
+      type: "function_call_output",
+      call_id: call.call_id,
+      output: JSON.stringify({
+        sent: false,
+        code: "missing_confirmation",
+        message: "Ask the user to confirm that Zuam should receive this message before sending."
+      })
+    };
+  }
+
+  if (!isValidEmail(replyEmail)) {
+    return {
+      type: "function_call_output",
+      call_id: call.call_id,
+      output: JSON.stringify({
+        sent: false,
+        code: "missing_reply_email",
+        message: "Ask the user for a valid reply email before sending."
+      })
+    };
+  }
+
+  if (userMessage.length < 10 || assistantInterpretation.length < 10) {
+    return {
+      type: "function_call_output",
+      call_id: call.call_id,
+      output: JSON.stringify({
+        sent: false,
+        code: "missing_details",
+        message:
+          "Ask for a clearer project or contact message before sending the email."
+      })
+    };
+  }
+
+  try {
+    const lead = buildContactLead({
+      type: "ai_chat_contact",
+      subject: cleanText(args.subject, 180) || "AI chat contact request",
+      name: cleanOptionalText(args.user_name, 120),
+      email: replyEmail,
+      company: cleanOptionalText(args.company, 160),
+      message: userMessage,
+      source: "ai-chat",
+      assistantInterpretation,
+      requestedOutcome: cleanOptionalText(args.requested_outcome, 1600),
+      projectType: cleanOptionalText(args.project_type, 160),
+      urgency: cleanOptionalText(args.urgency, 40),
+      transcript: formatChatTranscript(messages)
+    });
+    const delivery = await deliverContactLead(lead);
+
+    log("info", "chat_contact_sent", {
+      status: 200,
+      channel: delivery.channel
+    });
+
+    return {
+      type: "function_call_output",
+      call_id: call.call_id,
+      output: JSON.stringify({
+        sent: true,
+        channel: delivery.channel,
+        message:
+          "The contact email was sent to Zuam. Tell the user the team received it and will follow up using the reply email."
+      })
+    };
+  } catch (error) {
+    log("error", "chat_contact_failed", {
+      status: error.status || 500,
+      message: error instanceof Error ? error.message : String(error)
+    });
+
+    return {
+      type: "function_call_output",
+      call_id: call.call_id,
+      output: JSON.stringify({
+        sent: false,
+        code: "delivery_failed",
+        message:
+          "The contact email could not be sent right now. Ask the user to use the contact form or email address.",
+        missing: error.missing || undefined
+      })
+    };
+  }
+}
+
+async function requestOpenAiResponse(apiKey, payload, startedAt) {
+  const openAiResponse = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(
+      Number.parseInt(process.env.OPENAI_API_TIMEOUT_MS || "45000", 10)
+    )
+  });
+  const data = await openAiResponse.json().catch(() => null);
+
+  if (!openAiResponse.ok) {
+    log("error", "openai_response_failed", {
+      status: openAiResponse.status,
+      durationMs: Date.now() - startedAt
+    });
+
+    throw createError("OpenAI could not create a response.", openAiResponse.status, {
+      publicBody: {
+        error: "OpenAI could not create a response.",
+        details: data?.error?.message || `OpenAI returned ${openAiResponse.status}.`
+      }
+    });
+  }
+
+  return data;
 }
 
 async function handleChat(request, response) {
@@ -389,11 +970,16 @@ async function handleChat(request, response) {
   const payload = {
     model: getConfiguredModel(),
     instructions: getZuamAssistantInstructions(),
-    input: messages
+    input: messages,
+    parallel_tool_calls: false
   };
   const maxOutputTokens = getPositiveIntegerEnv("OPENAI_CHAT_MAX_OUTPUT_TOKENS");
   const reasoningEffort = getAllowedEnv("OPENAI_CHAT_REASONING_EFFORT", REASONING_EFFORTS);
   const verbosity = getAllowedEnv("OPENAI_CHAT_VERBOSITY", VERBOSITY_LEVELS);
+
+  if (isChatContactEmailEnabled()) {
+    payload.tools = [getContactEmailToolDefinition()];
+  }
 
   if (maxOutputTokens) {
     payload.max_output_tokens = maxOutputTokens;
@@ -408,32 +994,48 @@ async function handleChat(request, response) {
   }
 
   const startedAt = Date.now();
-  const openAiResponse = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(
-      Number.parseInt(process.env.OPENAI_API_TIMEOUT_MS || "45000", 10)
-    )
-  });
-  const data = await openAiResponse.json().catch(() => null);
+  let data;
 
-  if (!openAiResponse.ok) {
-    log("error", "openai_response_failed", {
-      status: openAiResponse.status,
-      durationMs: Date.now() - startedAt
-    });
-
-    return sendJson(request, response, openAiResponse.status, {
-      error: "OpenAI could not create a response.",
-      details: data?.error?.message || `OpenAI returned ${openAiResponse.status}.`
-    });
+  try {
+    data = await requestOpenAiResponse(apiKey, payload, startedAt);
+  } catch (error) {
+    return sendJson(
+      request,
+      response,
+      error.status || 502,
+      error.publicBody || { error: "OpenAI could not create a response." }
+    );
   }
 
-  const message = extractOutputText(data);
+  let message = extractOutputText(data);
+  const toolCalls = extractFunctionCalls(data);
+
+  if (toolCalls.length > 0) {
+    const toolOutputs = [];
+    for (const toolCall of toolCalls) {
+      toolOutputs.push(await executeContactToolCall(toolCall, request, messages));
+    }
+
+    try {
+      data = await requestOpenAiResponse(
+        apiKey,
+        {
+          ...payload,
+          input: toolOutputs,
+          previous_response_id: data.id
+        },
+        startedAt
+      );
+      message = extractOutputText(data);
+    } catch (error) {
+      return sendJson(
+        request,
+        response,
+        error.status || 502,
+        error.publicBody || { error: "OpenAI could not create a response." }
+      );
+    }
+  }
 
   if (!message) {
     return sendJson(request, response, 502, {
@@ -491,47 +1093,41 @@ async function handleContact(request, response) {
     });
   }
 
-  const webhookUrl = process.env.CONTACT_WEBHOOK_URL?.trim();
-
-  if (!webhookUrl) {
-    return sendJson(request, response, 503, {
-      error: "Contact delivery is not configured yet.",
-      contactEmail: CONTACT_EMAIL,
-      contactAnchor: "#contact"
-    });
-  }
-
-  const deliveryResponse = await fetch(webhookUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(process.env.CONTACT_WEBHOOK_SECRET
-        ? { Authorization: `Bearer ${process.env.CONTACT_WEBHOOK_SECRET}` }
-        : {})
-    },
-    body: JSON.stringify({
-      name,
-      email,
-      company,
-      message,
-      source,
-      contactEmail: CONTACT_EMAIL,
-      submittedAt: new Date().toISOString()
-    }),
-    signal: AbortSignal.timeout(
-      Number.parseInt(process.env.CONTACT_WEBHOOK_TIMEOUT_MS || "15000", 10)
-    )
+  const lead = buildContactLead({
+    type: "website_contact_form",
+    subject: `Website contact from ${name}`,
+    name,
+    email,
+    company,
+    message,
+    source
   });
 
-  if (!deliveryResponse.ok) {
-    return sendJson(request, response, 502, {
-      error: "Contact delivery failed.",
-      contactEmail: CONTACT_EMAIL
+  let delivery;
+  try {
+    delivery = await deliverContactLead(lead);
+  } catch (error) {
+    const status = error.status || 502;
+    return sendJson(request, response, status, {
+      error:
+        status === 503
+          ? "Contact delivery is not configured yet."
+          : "Contact delivery failed.",
+      contactEmail: CONTACT_EMAIL,
+      contactAnchor: "#contact",
+      missing: error.missing || undefined
     });
   }
 
-  log("info", "contact_sent", { status: 200, source });
-  return sendJson(request, response, 200, { ok: true });
+  log("info", "contact_sent", {
+    status: 200,
+    source,
+    channel: delivery.channel
+  });
+  return sendJson(request, response, 200, {
+    ok: true,
+    channel: delivery.channel
+  });
 }
 
 const server = createServer(async (request, response) => {
