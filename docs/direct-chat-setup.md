@@ -1,30 +1,34 @@
 # Direct chat setup
 
 This project embeds a floating assistant that talks directly to OpenAI through
-`POST /api/chat`. It does not use ChatKit sessions or Agent Builder workflows.
+the standalone Zuam API service at `POST /api/chat`. The public website is a
+static export; the OpenAI key is never bundled into the browser.
 
 ## Required configuration
 
-For local development, edit `.env.local`. This file wins over `.env`, so do
-not leave `OPENAI_API_KEY=` empty in `.env.local`; either set the real key there
-or leave the line commented out so `.env` can provide it.
+For local development or Docker deployment, copy `.env.example` to `.env` and
+fill in the private values:
 
 ```bash
 OPENAI_API_KEY=sk-...
 OPENAI_CHAT_MODEL=gpt-5.5
+OPENAI_CHAT_REASONING_EFFORT=low
+OPENAI_CHAT_VERBOSITY=low
 NEXT_PUBLIC_OPENAI_CHAT_MODEL_LABEL=GPT-5.5
 NEXT_PUBLIC_OPENAI_CHAT_ASSISTANT_NAME=Zuam AI Assistant
 NEXT_PUBLIC_ZUAM_CONTACT_EMAIL=contact@zuam.com
 ```
 
-Restart the Next.js server after changing environment values.
+Restart the API service after changing server-side environment values. Rebuild
+the static site after changing `NEXT_PUBLIC_*` values.
 
-For Vercel or another host, add the same variables in the project environment
-settings for every target where the chat should work:
+For local frontend development, run the API on its default development port and
+point the browser bundle at it:
 
-- Production
-- Preview
-- Development, if your platform uses remote development env vars
+```bash
+npm run api:dev
+NEXT_PUBLIC_ZUAM_API_BASE_URL=http://127.0.0.1:3001/api npm run dev
+```
 
 `OPENAI_API_KEY`, `OPENAI_CHAT_MODEL`, `OPENAI_CHAT_MAX_OUTPUT_TOKENS`,
 `CONTACT_WEBHOOK_URL`, and `CONTACT_WEBHOOK_SECRET` are server-only variables.
@@ -32,16 +36,21 @@ Never create `NEXT_PUBLIC_OPENAI_API_KEY`.
 
 ## Assistant behavior
 
-The server route keeps `OPENAI_API_KEY` server-side, sends the current chat
-messages to the OpenAI Responses API, and returns only the assistant text to the
-browser.
+The API service keeps `OPENAI_API_KEY` server-side, sends the current chat
+messages to the OpenAI Responses API, and returns only the assistant text to
+the browser.
 
 The assistant instructions and editable business knowledge live in:
 
+- `data/zuamContent.json`
 - `lib/zuam/apps.ts`
 - `lib/zuam/knowledge.ts`
 - `lib/zuam/assistantInstructions.ts`
 - `lib/zuam/chatSuggestions.ts`
+- `services/zuam-api/server.mjs`
+
+`data/zuamContent.json` is the shared source of truth used by both the static
+frontend and the API service.
 
 ## Contact from chat
 
@@ -64,7 +73,11 @@ with the contact email instead of claiming delivery.
 
 ```bash
 OPENAI_CHAT_MAX_OUTPUT_TOKENS=800
+OPENAI_CHAT_REASONING_EFFORT=low
+OPENAI_CHAT_VERBOSITY=low
+CHAT_RATE_LIMIT_PER_MINUTE=12
+CONTACT_RATE_LIMIT_PER_MINUTE=5
 ```
 
-The endpoint also limits the request body to recent messages and trims individual
-message content before forwarding it to OpenAI.
+The API also limits request body size, trims individual message content, and
+only forwards recent conversation turns to OpenAI.

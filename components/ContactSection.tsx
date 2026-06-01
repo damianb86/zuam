@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { Mail, Send } from "lucide-react";
 import { CONTACT_EMAIL, socialLinks } from "@/data/site";
 import { SectionHeading } from "@/components/SectionHeading";
+import { getZuamApiUrl } from "@/lib/zuam/api";
 
 type FormState = {
   name: string;
@@ -47,7 +48,7 @@ export function ContactSection() {
       return;
     }
 
-    const response = await fetch("/api/contact", {
+    const response = await fetch(getZuamApiUrl("contact"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

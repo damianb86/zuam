@@ -1,0 +1,13 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+COPY services/zuam-api ./services/zuam-api
+COPY data/zuamContent.json ./data/zuamContent.json
+
+EXPOSE 3000
+
+CMD ["node", "services/zuam-api/server.mjs"]

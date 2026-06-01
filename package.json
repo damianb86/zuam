@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "api:dev": "PORT=${PORT:-3001} node services/zuam-api/server.mjs",
     "build": "next build",
-    "start": "next start",
+    "start": "npm run api:dev",
     "lint": "eslint . --max-warnings=0"
   },
   "dependencies": {

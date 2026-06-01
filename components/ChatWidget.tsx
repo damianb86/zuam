@@ -22,6 +22,7 @@ import {
   ZUAM_CHAT_SUGGESTIONS,
   type ZuamChatSuggestion
 } from "@/lib/zuam/chatSuggestions";
+import { getZuamApiUrl } from "@/lib/zuam/api";
 import { ZUAM_CONTACT_EMAIL } from "@/lib/zuam/knowledge";
 
 const assistantName =
@@ -145,7 +146,7 @@ export function ChatWidget() {
     setIsSending(true);
 
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch(getZuamApiUrl("chat"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

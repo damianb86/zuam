@@ -1,0 +1,78 @@
+name: ${COMPOSE_PROJECT_NAME:?Set COMPOSE_PROJECT_NAME in the app .env}
+
+services:
+  static:
+    build:
+      context: .
+      dockerfile: Dockerfile.static
+      args:
+        NEXT_PUBLIC_ZUAM_API_BASE_URL: ${NEXT_PUBLIC_ZUAM_API_BASE_URL:-/api}
+        NEXT_PUBLIC_OPENAI_CHAT_ASSISTANT_NAME: ${NEXT_PUBLIC_OPENAI_CHAT_ASSISTANT_NAME:-Zuam AI Assistant}
+        NEXT_PUBLIC_OPENAI_CHAT_MODEL_LABEL: ${NEXT_PUBLIC_OPENAI_CHAT_MODEL_LABEL:-GPT-5.5}
+        NEXT_PUBLIC_ZUAM_CONTACT_EMAIL: ${NEXT_PUBLIC_ZUAM_CONTACT_EMAIL:-contact@zuam.com}
+    restart: unless-stopped
+    init: true
+    expose:
+      - "8080"
+    labels:
+      observability.stack: qorve
+      observability.app: zuam
+      observability.service: static
+      caddy: ${APP_HOST:?Set APP_HOST in the app .env}
+      caddy.encode: zstd gzip
+      caddy.1_handle: /*
+      caddy.1_handle.0_reverse_proxy: "{{upstreams 8080}}"
+      caddy_ingress_network: ${SHARED_DOCKER_NETWORK:-shared_apps}
+    logging:
+      driver: json-file
+      options:
+        max-size: ${DOCKER_LOG_MAX_SIZE:-10m}
+        max-file: ${DOCKER_LOG_MAX_FILE:-5}
+    networks:
+      - shared_apps
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    init: true
+    expose:
+      - "3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?Set OPENAI_API_KEY in the app .env}
+      OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-gpt-5.5}
+      OPENAI_CHAT_MAX_OUTPUT_TOKENS: ${OPENAI_CHAT_MAX_OUTPUT_TOKENS:-800}
+      OPENAI_CHAT_REASONING_EFFORT: ${OPENAI_CHAT_REASONING_EFFORT:-low}
+      OPENAI_CHAT_VERBOSITY: ${OPENAI_CHAT_VERBOSITY:-low}
+      OPENAI_API_TIMEOUT_MS: ${OPENAI_API_TIMEOUT_MS:-45000}
+      ZUAM_CONTACT_EMAIL: ${NEXT_PUBLIC_ZUAM_CONTACT_EMAIL:-contact@zuam.com}
+      CONTACT_WEBHOOK_URL: ${CONTACT_WEBHOOK_URL:-}
+      CONTACT_WEBHOOK_SECRET: ${CONTACT_WEBHOOK_SECRET:-}
+      CONTACT_WEBHOOK_TIMEOUT_MS: ${CONTACT_WEBHOOK_TIMEOUT_MS:-15000}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+      CHAT_RATE_LIMIT_PER_MINUTE: ${CHAT_RATE_LIMIT_PER_MINUTE:-12}
+      CONTACT_RATE_LIMIT_PER_MINUTE: ${CONTACT_RATE_LIMIT_PER_MINUTE:-5}
+      MAX_BODY_BYTES: ${MAX_BODY_BYTES:-131072}
+    labels:
+      observability.stack: qorve
+      observability.app: zuam
+      observability.service: api
+      caddy: ${APP_HOST:?Set APP_HOST in the app .env}
+      caddy.0_handle_path: /api/*
+      caddy.0_handle_path.0_reverse_proxy: "{{upstreams 3000}}"
+      caddy_ingress_network: ${SHARED_DOCKER_NETWORK:-shared_apps}
+    logging:
+      driver: json-file
+      options:
+        max-size: ${DOCKER_LOG_MAX_SIZE:-10m}
+        max-file: ${DOCKER_LOG_MAX_FILE:-5}
+    networks:
+      - shared_apps
+
+networks:
+  shared_apps:
+    external: true
+    name: ${SHARED_DOCKER_NETWORK:-shared_apps}
