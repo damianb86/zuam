@@ -1,0 +1,52 @@
+:root {
+  --zuam-bg: #f7f8fc;
+  --zuam-panel: rgba(255, 255, 255, 0.72);
+  --zuam-panel-solid: #ffffff;
+  --zuam-border: #dde2ec;
+  --zuam-navy: #071226;
+  --zuam-navy-2: #101b3a;
+  --zuam-violet: #8b5cf6;
+  --zuam-violet-soft: #c9bbff;
+  --zuam-cyan: #60a5fa;
+  --zuam-teal: #2dd4bf;
+  --zuam-text: #071226;
+  --zuam-muted: #778096;
+  --zuam-shadow-soft: 0 24px 70px rgba(7, 18, 38, 0.10);
+  --zuam-shadow-card: 0 14px 38px rgba(7, 18, 38, 0.08);
+  --zuam-radius-xl: 28px;
+  --zuam-radius-card: 16px;
+}
+
+.zuam-control-map-frame {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--zuam-radius-xl);
+  border: 1px solid var(--zuam-border);
+  background:
+    linear-gradient(rgba(217, 222, 234, 0.45) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(217, 222, 234, 0.45) 1px, transparent 1px),
+    radial-gradient(circle at 20% 18%, rgba(45, 212, 191, 0.10), transparent 32%),
+    radial-gradient(circle at 82% 12%, rgba(139, 92, 246, 0.14), transparent 36%),
+    var(--zuam-bg);
+  background-size: 92px 92px, 92px 92px, auto, auto, auto;
+  box-shadow: var(--zuam-shadow-soft);
+}
+
+.zuam-control-map-label {
+  border-radius: var(--zuam-radius-card);
+  border: 1px solid var(--zuam-border);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: var(--zuam-shadow-card);
+  backdrop-filter: blur(14px);
+  color: var(--zuam-text);
+}
+
+.zuam-neon-violet {
+  filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.55));
+}
+
+.zuam-neon-teal {
+  filter: drop-shadow(0 0 10px rgba(45, 212, 191, 0.45));
+}

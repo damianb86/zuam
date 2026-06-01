@@ -1,0 +1,63 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Zuam Z mark</title>
+  <desc id="desc">Minimal Z-shaped technology mark with node path and central insight diamond.</desc>
+  <defs>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.45 0 0 0 0 0.25 0 0 0 0 1 0 0 0 .65 0" result="glow"/>
+      <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <linearGradient id="signalLine" x1="90" y1="380" x2="365" y2="135" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2DD4BF"/>
+      <stop offset="0.48" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#60A5FA"/>
+    </linearGradient>
+    <radialGradient id="diamondFill" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 256) rotate(90) scale(34)">
+      <stop stop-color="#F8F5FF"/>
+      <stop offset="0.45" stop-color="#B794FF"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Base Zuam Z infrastructure -->
+  <g id="structure" stroke="#071226" stroke-linecap="round" stroke-linejoin="round">
+    <path id="upper-structure" d="M112 138H347L269 216" stroke-width="46"/>
+    <path id="diagonal-structure" d="M111 385L343 154" stroke-width="36"/>
+    <path id="inner-break" d="M205 287L251 241" stroke-width="34"/>
+    <path id="lower-structure" d="M215 383H382" stroke-width="46"/>
+  </g>
+
+  <!-- Living AI / signal route -->
+  <g id="signal-route" filter="url(#softGlow)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M122 139H330" stroke="#8B5CF6" stroke-width="5" opacity="0.95"/>
+    <path d="M122 151H314" stroke="#60A5FA" stroke-width="3" opacity="0.75"/>
+    <path d="M118 378L337 160" stroke="url(#signalLine)" stroke-width="5" opacity="0.95"/>
+    <path d="M222 373H372" stroke="#2DD4BF" stroke-width="5" opacity="0.85"/>
+  </g>
+
+  <!-- Nodes -->
+  <g id="nodes">
+    <circle cx="112" cy="385" r="31" fill="#071226"/>
+    <circle cx="112" cy="385" r="16" fill="#FFFFFF"/>
+    <circle cx="112" cy="385" r="7" fill="#2DD4BF"/>
+
+    <circle cx="347" cy="154" r="31" fill="#071226"/>
+    <circle cx="347" cy="154" r="16" fill="#FFFFFF"/>
+    <circle cx="347" cy="154" r="7" fill="#8B5CF6"/>
+
+    <circle cx="382" cy="383" r="31" fill="#071226"/>
+    <circle cx="382" cy="383" r="16" fill="#FFFFFF"/>
+    <circle cx="382" cy="383" r="7" fill="#2DD4BF"/>
+
+    <circle cx="226" cy="137" r="24" fill="#FFFFFF"/>
+    <circle cx="226" cy="137" r="9" fill="#8B5CF6"/>
+
+    <circle cx="278" cy="260" r="24" fill="#FFFFFF"/>
+    <circle cx="278" cy="260" r="9" fill="#2DD4BF"/>
+  </g>
+
+  <!-- Central insight diamond -->
+  <g id="insight" filter="url(#softGlow)">
+    <path d="M256 217C264 241 271 248 295 256C271 264 264 271 256 295C248 271 241 264 217 256C241 248 248 241 256 217Z" fill="url(#diamondFill)"/>
+  </g>
+</svg>

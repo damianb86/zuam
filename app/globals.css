@@ -1,0 +1,229 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #fafaff;
+  --foreground: #071226;
+  --muted: #5d6475;
+  --line: rgba(7, 18, 38, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    linear-gradient(90deg, rgba(7, 18, 38, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(7, 18, 38, 0.04) 1px, transparent 1px),
+    var(--background);
+  background-size: 48px 48px, 48px 48px, auto;
+  color: var(--foreground);
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+body::selection {
+  background: rgba(155, 124, 255, 0.22);
+}
+
+a,
+button,
+input,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@layer components {
+  .section-shell {
+    @apply mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8;
+  }
+
+  .section-padding {
+    @apply py-20 sm:py-24 lg:py-28;
+  }
+
+  .surface-card {
+    @apply rounded-[8px] border border-ink/10 bg-white/80 shadow-soft backdrop-blur transition duration-300;
+  }
+
+  .surface-card:hover {
+    @apply -translate-y-1 border-violet/40 shadow-[0_24px_70px_rgba(7,18,38,0.12)];
+  }
+
+  .button-primary {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-semibold text-white shadow-button transition duration-300 hover:-translate-y-0.5 hover:bg-night focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2;
+  }
+
+  .button-secondary {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-ink/20 bg-white/90 px-6 py-3 text-sm font-semibold text-ink transition duration-300 hover:-translate-y-0.5 hover:border-violet/40 hover:text-night focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2;
+  }
+
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.22em] text-violet;
+  }
+
+  .muted-copy {
+    @apply text-base leading-7 text-slateText sm:text-lg;
+  }
+}
+
+.logo-image {
+  mix-blend-mode: multiply;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+@supports (animation-timeline: view()) {
+  .reveal {
+    animation: reveal-up both ease-out;
+    animation-timeline: view();
+    animation-range: entry 0% cover 28%;
+  }
+}
+
+@supports not (animation-timeline: view()) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-panel {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(247, 248, 252, 0.82)),
+    radial-gradient(circle at 30% 20%, rgba(155, 124, 255, 0.18), transparent 36%);
+}
+
+.float-slow {
+  animation: float-slow 7s ease-in-out infinite;
+}
+
+.float-delay {
+  animation: float-slow 8s ease-in-out 1.2s infinite;
+}
+
+.logo-backdrop,
+.logo-half-left,
+.logo-half-right,
+.logo-center-star {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+.logo-backdrop {
+  animation: logo-backdrop-breathe 14s ease-in-out infinite;
+}
+
+.logo-half-left {
+  animation: logo-half-left-drift 10s ease-in-out infinite;
+}
+
+.logo-half-right {
+  animation: logo-half-right-drift 10s ease-in-out 1.4s infinite;
+}
+
+.logo-center-star {
+  animation: logo-star-drift 7s ease-in-out infinite;
+}
+
+@keyframes logo-backdrop-breathe {
+  0%,
+  100% {
+    opacity: 0.035;
+    transform: scale(0.985);
+  }
+  50% {
+    opacity: 0.075;
+    transform: scale(1.015);
+  }
+}
+
+@keyframes logo-half-left-drift {
+  0%,
+  100% {
+    transform: translate3d(-42px, -2px, 0) rotate(-0.35deg);
+  }
+  50% {
+    transform: translate3d(-18px, -7px, 0) rotate(0.45deg);
+  }
+}
+
+@keyframes logo-half-right-drift {
+  0%,
+  100% {
+    transform: translate3d(42px, 2px, 0) rotate(0.35deg);
+  }
+  50% {
+    transform: translate3d(18px, 7px, 0) rotate(-0.45deg);
+  }
+}
+
+@keyframes logo-star-drift {
+  0%,
+  100% {
+    transform: translate3d(0, -3px, 0) rotate(0deg) scale(0.96);
+  }
+  50% {
+    transform: translate3d(0, 5px, 0) rotate(18deg) scale(1.05);
+  }
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}

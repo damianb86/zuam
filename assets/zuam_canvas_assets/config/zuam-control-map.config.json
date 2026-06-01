@@ -1,0 +1,177 @@
+{
+  "name": "Zuam Living Control Map",
+  "version": "1.0.0",
+  "canvas": {
+    "logicalWidth": 1448,
+    "logicalHeight": 1086,
+    "aspectRatio": "4:3",
+    "background": "#F7F8FC"
+  },
+  "theme": {
+    "navy": "#071226",
+    "navy2": "#101B3A",
+    "violet": "#8B5CF6",
+    "violetSoft": "#C9BBFF",
+    "cyan": "#60A5FA",
+    "teal": "#2DD4BF",
+    "panel": "rgba(255,255,255,0.72)",
+    "border": "#DDE2EC",
+    "text": "#071226",
+    "muted": "#778096"
+  },
+  "meaning": {
+    "topStroke": "Input signals: commerce, product, conversion, SEO, reviews, operational data.",
+    "diagonalStroke": "AI reasoning: the system connects and interprets signals.",
+    "centerDiamond": "Insight: the moment where complexity becomes a decision.",
+    "lowerStroke": "Systems and scale: implementation, automation, performance and growth."
+  },
+  "paths": [
+    {
+      "id": "top-signal-path",
+      "role": "signals",
+      "points": [[390,210],[920,210]],
+      "strokeWidth": 78,
+      "glowLines": 4,
+      "particleDirection": "left-to-right",
+      "speed": 0.25
+    },
+    {
+      "id": "ai-reasoning-path",
+      "role": "intelligence",
+      "points": [[430,810],[1015,235]],
+      "strokeWidth": 58,
+      "glowLines": 5,
+      "particleDirection": "bottom-left-to-top-right",
+      "speed": 0.32
+    },
+    {
+      "id": "lower-system-path",
+      "role": "systems",
+      "points": [[565,810],[1040,810]],
+      "strokeWidth": 78,
+      "glowLines": 3,
+      "particleDirection": "left-to-right",
+      "speed": 0.22
+    }
+  ],
+  "nodes": [
+    {
+      "id": "signal-node",
+      "x": 390,
+      "y": 210,
+      "radius": 56,
+      "color": "violet",
+      "label": "Input signals",
+      "mouseBehavior": "attract",
+      "maxOffset": 18,
+      "returnStrength": 0.08
+    },
+    {
+      "id": "recognition-node",
+      "x": 920,
+      "y": 210,
+      "radius": 56,
+      "color": "violet",
+      "label": "Pattern recognition",
+      "mouseBehavior": "orbit",
+      "orbitRadius": 14,
+      "orbitSpeed": 0.018
+    },
+    {
+      "id": "automation-node",
+      "x": 430,
+      "y": 810,
+      "radius": 56,
+      "color": "teal",
+      "label": "Automation",
+      "mouseBehavior": "repel",
+      "maxOffset": 22,
+      "returnStrength": 0.07
+    },
+    {
+      "id": "scale-node",
+      "x": 1040,
+      "y": 810,
+      "radius": 56,
+      "color": "teal",
+      "label": "Scale",
+      "mouseBehavior": "attract",
+      "maxOffset": 16,
+      "returnStrength": 0.08
+    },
+    {
+      "id": "insight-core",
+      "x": 724,
+      "y": 543,
+      "radius": 62,
+      "color": "violet",
+      "label": "Insight",
+      "mouseBehavior": "pulse",
+      "pulseMin": 0.96,
+      "pulseMax": 1.08
+    }
+  ],
+  "ambientParticles": {
+    "count": 34,
+    "colors": ["#8B5CF6", "#2DD4BF", "#60A5FA", "#FFFFFF"],
+    "minRadius": 2,
+    "maxRadius": 7,
+    "mouseRadius": 150,
+    "behaviors": ["orbit", "repel", "drift"]
+  },
+  "labels": [
+    {
+      "id": "input-signals",
+      "text": "Input signals",
+      "status": "Live",
+      "x": 130,
+      "y": 210,
+      "w": 185,
+      "h": 82,
+      "accent": "teal"
+    },
+    {
+      "id": "pattern-recognition",
+      "text": "Pattern recognition",
+      "status": "Analyzing",
+      "x": 1126,
+      "y": 212,
+      "w": 210,
+      "h": 82,
+      "accent": "violet"
+    },
+    {
+      "id": "automation",
+      "text": "Automation",
+      "status": "Active",
+      "x": 165,
+      "y": 610,
+      "w": 150,
+      "h": 82,
+      "accent": "violet"
+    },
+    {
+      "id": "scale",
+      "text": "Scale",
+      "status": "Optimizing",
+      "x": 1110,
+      "y": 688,
+      "w": 130,
+      "h": 82,
+      "accent": "teal"
+    }
+  ],
+  "legend": [
+    { "text": "Signal", "accent": "violet" },
+    { "text": "System", "accent": "teal" },
+    { "text": "Scale", "accent": "violet" }
+  ],
+  "animation": {
+    "reducedMotion": "disable particles, keep static SVG and light hover only",
+    "linePulseDurationMs": 2200,
+    "particleMinSpeed": 0.12,
+    "particleMaxSpeed": 0.55,
+    "hoverRadius": 170,
+    "spring": { "stiffness": 0.06, "damping": 0.82 }
+  }
+}
