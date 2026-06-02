@@ -358,6 +358,13 @@ html.dark .chat-input {
   color: #071226;
 }
 
+html.dark textarea.chat-input {
+  background: rgba(7, 18, 38, 0.78);
+  color: #f8fbff;
+  caret-color: #c9bbff;
+  -webkit-text-fill-color: #f8fbff;
+}
+
 html.dark .chat-bubble-assistant .text-slateText {
   color: #5d6475;
 }
@@ -377,7 +384,8 @@ html.dark .chat-icon-button:hover {
 }
 
 html.dark .chat-input::placeholder {
-  color: #5d6475;
+  color: #aeb8ca;
+  -webkit-text-fill-color: #aeb8ca;
 }
 
 .logo-image {
