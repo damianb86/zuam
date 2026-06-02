@@ -77,13 +77,14 @@ email and enough project details before sending. The email includes the user's
 message, the assistant's interpretation, requested outcome, and recent chat
 context.
 
-The browser also has a lead safety net: once the visitor has provided a valid
-email plus meaningful project/business context, it sends a preliminary contact lead after
-`NEXT_PUBLIC_CHAT_CONTACT_INITIAL_CAPTURE_DELAY_MS`. If the visitor adds more
-details later, it sends one follow-up after
-`NEXT_PUBLIC_CHAT_CONTACT_FOLLOWUP_CAPTURE_DELAY_MS`. If the visitor leaves the
-page before the first timer fires, the browser attempts one last preliminary
-capture with `sendBeacon`.
+The browser also has a lead safety net, but it should stay conservative. Once
+the visitor has provided a valid email plus meaningful project/business context,
+it sends one preliminary contact lead only after
+`NEXT_PUBLIC_CHAT_CONTACT_INITIAL_CAPTURE_DELAY_MS` of inactivity. If the visitor
+adds material new details after that, it can send one follow-up after
+`NEXT_PUBLIC_CHAT_CONTACT_FOLLOWUP_CAPTURE_DELAY_MS`; it does not keep sending
+updates for every later message. If the visitor leaves the page before the first
+timer fires, the browser attempts one last preliminary capture with `sendBeacon`.
 
 Disable chat email sending without disabling the normal chat:
 
@@ -144,8 +145,8 @@ OPENAI_SCOPE_GUARD_MODEL=
 OPENAI_SCOPE_GUARD_REASONING_EFFORT=low
 CHAT_RATE_LIMIT_PER_MINUTE=12
 CONTACT_RATE_LIMIT_PER_MINUTE=5
-NEXT_PUBLIC_CHAT_CONTACT_INITIAL_CAPTURE_DELAY_MS=1500
-NEXT_PUBLIC_CHAT_CONTACT_FOLLOWUP_CAPTURE_DELAY_MS=30000
+NEXT_PUBLIC_CHAT_CONTACT_INITIAL_CAPTURE_DELAY_MS=180000
+NEXT_PUBLIC_CHAT_CONTACT_FOLLOWUP_CAPTURE_DELAY_MS=180000
 ```
 
 The API also limits request body size, trims individual message content, and

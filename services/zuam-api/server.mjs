@@ -395,13 +395,17 @@ function countAssistantQuestionSets(messages) {
 }
 
 function hasAssistantSentContact(messages) {
-  return messages.some(
+  return countAssistantSentContacts(messages) > 0;
+}
+
+function countAssistantSentContacts(messages) {
+  return messages.filter(
     (message) =>
       message.role === "assistant" &&
       /\b(contact sent|message was sent|email was sent|mensaje enviado|contacto enviado|zuam received|team received|recibio|recibió)\b/i.test(
         message.content
       )
-  );
+  ).length;
 }
 
 function getLastUserMessage(messages) {
@@ -412,6 +416,36 @@ function getLastUserMessage(messages) {
   }
 
   return "";
+}
+
+function hasMaterialNewContactInfo(messages) {
+  const lastUserMessage = getLastUserMessage(messages)
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "")
+    .trim();
+  const normalized = lastUserMessage
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  const words = normalized.split(/\s+/).filter((word) => word.length >= 3);
+
+  return (
+    lastUserMessage.length >= 40 ||
+    words.length >= 7 ||
+    /\b(\d+|budget|presupuesto|deadline|plazo|tienda|store|empresa|company|integracion|integration|usuarios|users|ventas|sales)\b/i.test(
+      normalized
+    )
+  );
+}
+
+function hasExplicitSendReadySignal(messages) {
+  const normalized = getLastUserMessage(messages)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  return /\b(send|sent|enviar|envia|mandar|manda|mandalo|mandalo|listo|ok|dale|no more|nothing else|no tengo mas|sin mas|eso es todo|that's all|thats all)\b/i.test(
+    normalized
+  );
 }
 
 function getLeadFlowRuntimeInstructions(messages) {
@@ -427,7 +461,7 @@ function getLeadFlowRuntimeInstructions(messages) {
 - Contact message already sent in this conversation: ${contactSent ? "yes" : "no"}.
 - Assistant question sets already asked: ${questionSets}.
 
-Use this state to avoid repeating questions and to enforce the two-question-set limit. If assistant question sets already asked is 2 or more, do not ask any more questions; acknowledge briefly and point to follow-up by email.`;
+Use this state to avoid repeating questions and to enforce the two-question-set limit. If assistant question sets already asked is 2 or more, do not ask any more questions. If contact was already sent, only send a follow-up email when the latest user message adds material new information about the same request; otherwise acknowledge briefly and point to follow-up by email.`;
 }
 
 function getScopeClassifierInstructions() {
@@ -644,11 +678,13 @@ All flows should move toward basic contact capture first. If the user starts wit
 
 The first question set should focus only on the minimum viable lead: name, reply email, company/project if any, and the business need. Keep it to one to three questions.
 
-Once the user has provided a valid reply email and meaningful project/business context, use the ${CONTACT_TOOL_NAME} tool immediately. Do not ask for confirmation if the user has already shared the email and project context in this commercial chat. Do not claim the message was sent unless the tool succeeds.
+Minimize contact emails. Prefer one complete email over several partial emails. Do not use the ${CONTACT_TOOL_NAME} tool immediately after the first viable lead unless the user explicitly asks you to send it or says they have no more details to add.
 
-After the tool succeeds, start your next visible reply by telling the user that Zuam already received enough information to contact them and that the message was sent. Then, only if you have asked fewer than two question sets, ask one second optional question set with one to three questions to improve the follow-up. Make clear those extra answers are optional and only help Zuam respond more accurately.
+Once the user has provided a valid reply email and meaningful project/business context, tell them you have enough for Zuam to evaluate the request, then ask one second optional question set if you have asked fewer than two question sets. Make clear those extra answers are optional and only help Zuam respond more accurately. Do not claim an email was sent unless the tool succeeds.
 
-If the user answers the second question set, acknowledge briefly and do not ask more questions. If the user does not answer the second question set, that is fine: the lead was already sent. If delivery fails, say the message could not be sent right now and offer the contact form or ${CONTACT_EMAIL}.
+Use the ${CONTACT_TOOL_NAME} tool after the user answers the second optional question set, explicitly asks to send, says they have no more details, or the two-question-set limit has been reached and you already have a valid reply email plus meaningful project/business context. If delivery fails, say the message could not be sent right now and offer the contact form or ${CONTACT_EMAIL}.
+
+If a contact email was already sent and the user continues chatting, do not send another email for acknowledgements, small talk, repeated details, or questions outside the request. Send at most one follow-up email, and only when the latest user message adds material new information about the same project or business need.
 
 When using the contact tool, include the user's original request, your interpretation, the requested outcome, and recent chat context.
 
@@ -704,14 +740,14 @@ function getContactEmailToolDefinition() {
     type: "function",
     name: CONTACT_TOOL_NAME,
     description:
-      "Send a Zuam contact email from this chat. Use as soon as the user has provided a valid reply email and meaningful business/project context, even if they did not explicitly ask to send. Include the user's original request, your interpretation, requested outcome, and relevant context.",
+      "Send a Zuam contact email from this chat. Prefer one complete email after the user has provided a valid reply email, meaningful business/project context, and either answered the optional follow-up questions, explicitly asked to send, said they have no more details, or reached the two-question-set limit. After one contact email has already been sent, use only once more and only when the latest user message adds material new information about the same request.",
     parameters: {
       type: "object",
       properties: {
         user_confirmed_send: {
           type: "boolean",
           description:
-            "True when the user explicitly asked to send the message, confirmed that Zuam should receive it, or has provided a valid reply email plus meaningful business/project context in this commercial lead-capture chat."
+            "True only when the send timing is appropriate: the user explicitly asked to send, said they have no more details, answered the optional follow-up questions, or the two-question-set limit has been reached with a valid reply email and meaningful business/project context."
         },
         subject: {
           type: "string",
@@ -1162,6 +1198,52 @@ async function executeContactToolCall(call, request, messages) {
     args = JSON.parse(call.arguments || "{}");
   } catch {
     args = {};
+  }
+
+  const contactSentCount = countAssistantSentContacts(messages);
+  const questionSets = countAssistantQuestionSets(messages);
+
+  if (contactSentCount >= 2) {
+    return {
+      type: "function_call_output",
+      call_id: call.call_id,
+      output: JSON.stringify({
+        sent: false,
+        code: "contact_update_limit_reached",
+        message:
+          "Do not send another email in this conversation. Acknowledge briefly and tell the user Zuam will follow up by email."
+      })
+    };
+  }
+
+  if (contactSentCount >= 1 && !hasMaterialNewContactInfo(messages)) {
+    return {
+      type: "function_call_output",
+      call_id: call.call_id,
+      output: JSON.stringify({
+        sent: false,
+        code: "no_material_contact_update",
+        message:
+          "Do not send a follow-up email unless the latest user message adds material new project or business information. Acknowledge briefly instead."
+      })
+    };
+  }
+
+  if (
+    contactSentCount === 0 &&
+    questionSets < 2 &&
+    !hasExplicitSendReadySignal(messages)
+  ) {
+    return {
+      type: "function_call_output",
+      call_id: call.call_id,
+      output: JSON.stringify({
+        sent: false,
+        code: "premature_contact_send",
+        message:
+          "Do not send the first contact email yet. Tell the user you have enough for Zuam to evaluate the request, then ask one optional follow-up question set to improve the handoff."
+      })
+    };
   }
 
   const replyEmail = cleanText(args.reply_email, 180);

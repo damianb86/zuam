@@ -33,14 +33,15 @@ const assistantName =
 const WELCOME_MESSAGE_ID = "zuam-welcome-message";
 const CONTACT_INITIAL_CAPTURE_DELAY_MS = getPositivePublicInteger(
   process.env.NEXT_PUBLIC_CHAT_CONTACT_INITIAL_CAPTURE_DELAY_MS,
-  1_500
+  180_000
 );
 const CONTACT_FOLLOWUP_CAPTURE_DELAY_MS = getPositivePublicInteger(
   process.env.NEXT_PUBLIC_CHAT_CONTACT_FOLLOWUP_CAPTURE_DELAY_MS,
-  30_000
+  180_000
 );
 const CONTACT_TOAST_DURATION_MS = 4_500;
 const CONTACT_MIN_CONTEXT_CHARS = 24;
+const CONTACT_FOLLOWUP_MIN_NEW_CONTEXT_CHARS = 40;
 const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 const CONTACT_INTENT_PATTERN =
   /\b(contact|contactar|contacten|contactame|contáctame|hablar|equipo|team|send|enviar|mandar|mail|email|e-mail|mensaje|message|cotizar|quote|proposal|propuesta|presupuesto|reunion|meeting|call|llamada|contratar|hire|project|proyecto)\b/i;
@@ -73,6 +74,7 @@ type ContactCaptureState = {
   fingerprint: string;
   optedOut: boolean;
   contactAlreadySent: boolean;
+  contactSentCount: number;
 };
 
 type ContactCapturePayload = {
@@ -139,6 +141,37 @@ function getApiMessages(messages: ChatMessage[]) {
   return messages
     .filter((message) => message.id !== WELCOME_MESSAGE_ID)
     .map(({ role, content }) => ({ role, content }));
+}
+
+function getApiMessagesWithContactCaptureMarkers(
+  messages: ChatMessage[],
+  initialCaptureSent: boolean,
+  followupCaptureSent: boolean
+) {
+  const apiMessages = getApiMessages(messages);
+  const sentCount = countAssistantContactSentConfirmations(
+    apiMessages.map((message, index) => ({
+      id: `api-message-${index}`,
+      role: message.role,
+      content: message.content
+    }))
+  );
+
+  if (initialCaptureSent && sentCount === 0) {
+    apiMessages.push({
+      role: "assistant",
+      content: "Mensaje enviado al contacto. Pronto nos comunicaremos."
+    });
+  }
+
+  if (followupCaptureSent && sentCount < 2) {
+    apiMessages.push({
+      role: "assistant",
+      content: "Información agregada al contacto enviado."
+    });
+  }
+
+  return apiMessages;
 }
 
 function renderInlineMarkdown(text: string) {
@@ -311,13 +344,17 @@ function hasContactOptOut(messages: ChatMessage[]) {
 }
 
 function hasAssistantContactSentConfirmation(messages: ChatMessage[]) {
-  return messages.some((message) => {
+  return countAssistantContactSentConfirmations(messages) > 0;
+}
+
+function countAssistantContactSentConfirmations(messages: ChatMessage[]) {
+  return messages.filter((message) => {
     if (message.role !== "assistant") {
       return false;
     }
 
     return CONTACT_SENT_PATTERN.test(normalizeContactText(message.content));
-  });
+  }).length;
 }
 
 function getMeaningfulUserContext(messages: ChatMessage[]) {
@@ -349,7 +386,8 @@ function getContactCaptureState(messages: ChatMessage[]): ContactCaptureState {
     transcript,
     fingerprint: `${meaningfulContext}\n\n${transcript}`,
     optedOut: hasContactOptOut(messages),
-    contactAlreadySent: hasAssistantContactSentConfirmation(messages)
+    contactAlreadySent: hasAssistantContactSentConfirmation(messages),
+    contactSentCount: countAssistantContactSentConfirmations(messages)
   };
 }
 
@@ -389,6 +427,25 @@ function canCaptureContactState(state: ContactCaptureState) {
   );
 }
 
+function hasMaterialContactUpdate(previousContext: string, nextContext: string) {
+  const previous = previousContext.trim();
+  const next = nextContext.trim();
+
+  if (!previous) {
+    return next.length >= CONTACT_FOLLOWUP_MIN_NEW_CONTEXT_CHARS;
+  }
+
+  if (normalizeContactText(previous) === normalizeContactText(next)) {
+    return false;
+  }
+
+  if (next.startsWith(previous)) {
+    return next.slice(previous.length).trim().length >= CONTACT_FOLLOWUP_MIN_NEW_CONTEXT_CHARS;
+  }
+
+  return next.length >= previous.length + CONTACT_FOLLOWUP_MIN_NEW_CONTEXT_CHARS;
+}
+
 function buildContactCaptureRequestBody({
   captureType,
   state
@@ -406,8 +463,8 @@ function buildContactCaptureRequestBody({
     source: `ai-chat-auto-${captureType}`,
     assistantInterpretation:
       captureType === "initial"
-        ? "The visitor started a direct contact flow in chat. This is an automatic preliminary capture to avoid losing the lead."
-        : "The visitor added more information after the initial chat lead capture. This is an automatic follow-up with a more complete transcript.",
+        ? "The visitor provided enough contact and project context, then stopped interacting long enough to trigger the delayed lead safety net."
+        : "The visitor added material new information after the initial chat lead capture. This is the single automatic follow-up with the more complete transcript.",
     requestedOutcome: "Follow up with the visitor by email.",
     projectType: inferProjectType(state.fingerprint),
     urgency: inferUrgency(state.fingerprint),
@@ -431,7 +488,9 @@ export function ChatWidget() {
   const [toastMessage, setToastMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const initialCaptureFingerprintRef = useRef("");
+  const initialCaptureContextRef = useRef("");
   const followupCaptureFingerprintRef = useRef("");
+  const followupCaptureSentRef = useRef(false);
   const contactCaptureInFlightRef = useRef(false);
   const toastTimerRef = useRef<number | null>(null);
 
@@ -505,6 +564,11 @@ export function ChatWidget() {
 
     if (state.contactAlreadySent && !initialCaptureFingerprintRef.current) {
       initialCaptureFingerprintRef.current = state.fingerprint;
+      initialCaptureContextRef.current = state.meaningfulContext;
+    }
+
+    if (state.contactSentCount >= 2) {
+      followupCaptureSentRef.current = true;
     }
 
     const canCapture = canCaptureContactState(state);
@@ -521,6 +585,7 @@ export function ChatWidget() {
           !initialCaptureFingerprintRef.current
         ) {
           initialCaptureFingerprintRef.current = latestState.fingerprint;
+          initialCaptureContextRef.current = latestState.meaningfulContext;
           void sendContactCapture({
             captureType: "initial",
             state: latestState
@@ -531,11 +596,15 @@ export function ChatWidget() {
       return () => window.clearTimeout(timer);
     }
 
-    if (state.fingerprint === followupCaptureFingerprintRef.current) {
+    if (followupCaptureSentRef.current) {
       return;
     }
 
     if (state.fingerprint === initialCaptureFingerprintRef.current) {
+      return;
+    }
+
+    if (!hasMaterialContactUpdate(initialCaptureContextRef.current, state.meaningfulContext)) {
       return;
     }
 
@@ -545,9 +614,11 @@ export function ChatWidget() {
       if (
         canCaptureContactState(latestState) &&
         latestState.fingerprint !== initialCaptureFingerprintRef.current &&
-        latestState.fingerprint !== followupCaptureFingerprintRef.current
+        !followupCaptureSentRef.current &&
+        hasMaterialContactUpdate(initialCaptureContextRef.current, latestState.meaningfulContext)
       ) {
         followupCaptureFingerprintRef.current = latestState.fingerprint;
+        followupCaptureSentRef.current = true;
         void sendContactCapture({
           captureType: "followup",
           state: latestState
@@ -567,6 +638,7 @@ export function ChatWidget() {
       }
 
       initialCaptureFingerprintRef.current = state.fingerprint;
+      initialCaptureContextRef.current = state.meaningfulContext;
       const body = JSON.stringify(
         buildContactCaptureRequestBody({
           captureType: "initial",
@@ -624,7 +696,14 @@ export function ChatWidget() {
       role: "user",
       content
     };
-    const nextMessages = [...getApiMessages(messages), userMessage];
+    const nextMessages = [
+      ...getApiMessagesWithContactCaptureMarkers(
+        messages,
+        Boolean(initialCaptureFingerprintRef.current),
+        followupCaptureSentRef.current
+      ),
+      userMessage
+    ];
 
     setMessages((current) => [...current, userMessage]);
     setInput("");
