@@ -46,6 +46,39 @@ The API service keeps `OPENAI_API_KEY` server-side, sends the current chat
 messages to the OpenAI Responses API, and returns only the assistant text to
 the browser.
 
+## Abuse protection
+
+The public chat is protected before any OpenAI call is made:
+
+- CORS/origin validation rejects browser requests from unapproved origins.
+- Fetch Metadata rejects browser requests marked as cross-site.
+- The browser sends a public chat session id plus a hidden honeypot field.
+- The API rate-limits by IP per minute, IP per day, chat session per minute,
+  and chat session per day.
+- The API rejects sessions that are too new, filled honeypot fields, oversized
+  latest messages, and requests with too many message objects.
+- Request bodies are capped by `MAX_BODY_BYTES`, and individual messages are
+  trimmed before forwarding recent context to OpenAI.
+- Semantic input and output scope guards can block off-scope turns before the
+  expensive assistant flow completes.
+
+Production defaults:
+
+```bash
+CHAT_RATE_LIMIT_PER_MINUTE=12
+CHAT_SESSION_RATE_LIMIT_PER_MINUTE=6
+CHAT_SESSION_DAILY_LIMIT=30
+CHAT_IP_DAILY_LIMIT=120
+CHAT_MIN_SESSION_AGE_MS=1200
+CHAT_MAX_MESSAGES_PER_REQUEST=18
+CHAT_MAX_LATEST_MESSAGE_CHARS=2000
+MAX_BODY_BYTES=131072
+```
+
+These counters are in-memory inside the API process. For multiple API replicas
+or higher-risk traffic, put the same policy at the edge as well, for example in
+Caddy/Cloudflare/WAF and a shared store such as Redis.
+
 Before the assistant answers, the API runs a semantic scope classifier with
 Structured Outputs. After the assistant drafts a reply, the API runs a second
 scope check over that draft. Both guards keep the chat focused on Zuam
@@ -144,6 +177,12 @@ OPENAI_OUTPUT_GUARD_ENABLED=true
 OPENAI_SCOPE_GUARD_MODEL=
 OPENAI_SCOPE_GUARD_REASONING_EFFORT=low
 CHAT_RATE_LIMIT_PER_MINUTE=12
+CHAT_SESSION_RATE_LIMIT_PER_MINUTE=6
+CHAT_SESSION_DAILY_LIMIT=30
+CHAT_IP_DAILY_LIMIT=120
+CHAT_MIN_SESSION_AGE_MS=1200
+CHAT_MAX_MESSAGES_PER_REQUEST=18
+CHAT_MAX_LATEST_MESSAGE_CHARS=2000
 CONTACT_RATE_LIMIT_PER_MINUTE=5
 NEXT_PUBLIC_CHAT_CONTACT_INITIAL_CAPTURE_DELAY_MS=180000
 NEXT_PUBLIC_CHAT_CONTACT_FOLLOWUP_CAPTURE_DELAY_MS=180000

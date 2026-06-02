@@ -26,8 +26,27 @@ const CONTACT_EMAIL =
   process.env.NEXT_PUBLIC_ZUAM_CONTACT_EMAIL ||
   zuamContent.contactEmail;
 const RATE_LIMIT_WINDOW_MS = 60_000;
+const DAILY_RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const chatRateLimit = Number.parseInt(process.env.CHAT_RATE_LIMIT_PER_MINUTE || "12", 10);
+const chatIpDailyLimit = Number.parseInt(process.env.CHAT_IP_DAILY_LIMIT || "120", 10);
+const chatSessionRateLimit = Number.parseInt(
+  process.env.CHAT_SESSION_RATE_LIMIT_PER_MINUTE || "6",
+  10
+);
+const chatSessionDailyLimit = Number.parseInt(
+  process.env.CHAT_SESSION_DAILY_LIMIT || "30",
+  10
+);
 const contactRateLimit = Number.parseInt(process.env.CONTACT_RATE_LIMIT_PER_MINUTE || "5", 10);
+const chatMinSessionAgeMs = Number.parseInt(process.env.CHAT_MIN_SESSION_AGE_MS || "1200", 10);
+const maxChatMessagesPerRequest = Number.parseInt(
+  process.env.CHAT_MAX_MESSAGES_PER_REQUEST || "18",
+  10
+);
+const maxLatestChatMessageChars = Number.parseInt(
+  process.env.CHAT_MAX_LATEST_MESSAGE_CHARS || "2000",
+  10
+);
 const buckets = new Map();
 
 const SCOPE_CLASSIFICATION_SCHEMA = {
@@ -299,21 +318,50 @@ function applyCors(request, response) {
   response.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
-function isRateLimited(key, limit) {
+function isCrossSiteBrowserRequest(request) {
+  const fetchSite = String(request.headers["sec-fetch-site"] || "").toLowerCase();
+  return fetchSite === "cross-site";
+}
+
+function hasJsonContentType(request) {
+  return String(request.headers["content-type"] || "")
+    .toLowerCase()
+    .split(";")[0]
+    .trim() === "application/json";
+}
+
+function cleanupExpiredBuckets(now = Date.now()) {
+  if (buckets.size < 10_000) {
+    return;
+  }
+
+  for (const [key, bucket] of buckets.entries()) {
+    if (bucket.resetAt <= now) {
+      buckets.delete(key);
+    }
+  }
+}
+
+function isRateLimitedWindow(key, limit, windowMs) {
   if (!Number.isFinite(limit) || limit <= 0) {
     return false;
   }
 
   const now = Date.now();
+  cleanupExpiredBuckets(now);
   const current = buckets.get(key);
 
   if (!current || current.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    buckets.set(key, { count: 1, resetAt: now + windowMs });
     return false;
   }
 
   current.count += 1;
   return current.count > limit;
+}
+
+function isRateLimited(key, limit) {
+  return isRateLimitedWindow(key, limit, RATE_LIMIT_WINDOW_MS);
 }
 
 function cleanMessageContent(value) {
@@ -346,6 +394,101 @@ function parseMessages(body) {
     })
     .filter(Boolean)
     .slice(-MAX_MESSAGES);
+}
+
+function getChatSession(body) {
+  const id = cleanText(body?.session_id || body?.sessionId, 80);
+  const startedAt = Number(body?.session_started_at || body?.sessionStartedAt || 0);
+
+  return {
+    id: /^[a-zA-Z0-9_-]{24,80}$/.test(id) ? id : "",
+    startedAt: Number.isFinite(startedAt) && startedAt > 0 ? startedAt : 0
+  };
+}
+
+function hasFilledHoneypot(body) {
+  return ["website", "companyWebsite", "company_website", "url"].some((field) =>
+    typeof body?.[field] === "string" && body[field].trim().length > 0
+  );
+}
+
+function validateChatAbuseGuards({ body, messages, session, ip }) {
+  if (hasFilledHoneypot(body)) {
+    return {
+      status: 400,
+      code: "bot_honeypot",
+      error: "Invalid chat request."
+    };
+  }
+
+  if (!session.id) {
+    return {
+      status: 400,
+      code: "missing_chat_session",
+      error: "Invalid chat session."
+    };
+  }
+
+  if (
+    Number.isFinite(chatMinSessionAgeMs) &&
+    chatMinSessionAgeMs > 0 &&
+    (!session.startedAt || Date.now() - session.startedAt < chatMinSessionAgeMs)
+  ) {
+    return {
+      status: 429,
+      code: "chat_session_too_new",
+      error: "Please wait a moment before sending a chat message."
+    };
+  }
+
+  if (Array.isArray(body?.messages) && body.messages.length > maxChatMessagesPerRequest) {
+    return {
+      status: 400,
+      code: "too_many_chat_messages",
+      error: "Too many chat messages in one request."
+    };
+  }
+
+  const latestUserMessage = getLastUserMessage(messages);
+  if (latestUserMessage.length > maxLatestChatMessageChars) {
+    return {
+      status: 400,
+      code: "chat_message_too_long",
+      error: "Chat message is too long."
+    };
+  }
+
+  if (isRateLimited(`chat-session:${session.id}`, chatSessionRateLimit)) {
+    return {
+      status: 429,
+      code: "chat_session_rate_limited",
+      error: "Too many chat requests. Please wait a moment and try again."
+    };
+  }
+
+  if (
+    isRateLimitedWindow(
+      `chat-session-day:${session.id}`,
+      chatSessionDailyLimit,
+      DAILY_RATE_LIMIT_WINDOW_MS
+    )
+  ) {
+    return {
+      status: 429,
+      code: "chat_session_daily_limited",
+      error: "This chat has reached today's message limit. Please use the contact form."
+    };
+  }
+
+  if (isRateLimitedWindow(`chat-ip-day:${ip}`, chatIpDailyLimit, DAILY_RATE_LIMIT_WINDOW_MS)) {
+    return {
+      status: 429,
+      code: "chat_ip_daily_limited",
+      error: "Too many chat requests today. Please use the contact form."
+    };
+  }
+
+  return null;
 }
 
 function cleanText(value, maxLength) {
@@ -1526,6 +1669,12 @@ async function validateAssistantOutputScope(apiKey, messages, draft, scopeClassi
 async function handleChat(request, response) {
   const ip = getRequestIp(request);
 
+  if (!hasJsonContentType(request)) {
+    return sendJson(request, response, 415, {
+      error: "Chat requests must use application/json."
+    });
+  }
+
   if (isRateLimited(`chat:${ip}`, chatRateLimit)) {
     return sendJson(request, response, 429, {
       error: "Too many chat requests. Please wait a moment and try again."
@@ -1546,6 +1695,20 @@ async function handleChat(request, response) {
     throw error;
   });
   const messages = parseMessages(body);
+  const session = getChatSession(body);
+  const abuseGuard = validateChatAbuseGuards({ body, messages, session, ip });
+
+  if (abuseGuard) {
+    log("warn", "chat_abuse_guard_blocked", {
+      code: abuseGuard.code,
+      ip,
+      sessionId: session.id || null
+    });
+    return sendJson(request, response, abuseGuard.status, {
+      error: abuseGuard.error,
+      code: abuseGuard.code
+    });
+  }
 
   if (!messages.some((message) => message.role === "user")) {
     return sendJson(request, response, 400, {
@@ -1840,6 +2003,12 @@ const server = createServer(async (request, response) => {
     if (!isAllowedOrigin(request)) {
       return sendJson(request, response, 403, {
         error: "Requests must come from an allowed origin."
+      });
+    }
+
+    if (isCrossSiteBrowserRequest(request)) {
+      return sendJson(request, response, 403, {
+        error: "Cross-site browser requests are not allowed."
       });
     }
 

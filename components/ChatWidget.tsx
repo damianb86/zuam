@@ -31,6 +31,7 @@ const assistantName =
   process.env.NEXT_PUBLIC_OPENAI_CHAT_ASSISTANT_NAME ||
   "Zuam AI Assistant";
 const WELCOME_MESSAGE_ID = "zuam-welcome-message";
+const CHAT_SESSION_STORAGE_KEY = "zuam_chat_session_v1";
 const CONTACT_INITIAL_CAPTURE_DELAY_MS = getPositivePublicInteger(
   process.env.NEXT_PUBLIC_CHAT_CONTACT_INITIAL_CAPTURE_DELAY_MS,
   180_000
@@ -64,6 +65,11 @@ type ChatApiResponse = {
   details?: string;
   contact_sent?: boolean;
   contact_message?: string;
+};
+
+type ChatSession = {
+  id: string;
+  startedAt: number;
 };
 
 type ContactCaptureState = {
@@ -101,6 +107,55 @@ function createMessageId(role: ChatRole) {
   return `${role}-${Date.now().toString(36)}-${Math.random()
     .toString(36)
     .slice(2, 10)}`;
+}
+
+function createChatSession(): ChatSession {
+  const randomBytes = new Uint8Array(18);
+  if (window.crypto?.getRandomValues) {
+    window.crypto.getRandomValues(randomBytes);
+  } else {
+    randomBytes.forEach((_, index) => {
+      randomBytes[index] = Math.floor(Math.random() * 256);
+    });
+  }
+  const id = Array.from(randomBytes, (byte) => byte.toString(36).padStart(2, "0"))
+    .join("")
+    .slice(0, 48);
+
+  return {
+    id,
+    startedAt: Date.now()
+  };
+}
+
+function getChatSession() {
+  try {
+    const stored = window.localStorage.getItem(CHAT_SESSION_STORAGE_KEY);
+    const parsed = stored ? JSON.parse(stored) as Partial<ChatSession> : null;
+
+    if (
+      parsed?.id &&
+      /^[a-zA-Z0-9_-]{24,80}$/.test(parsed.id) &&
+      typeof parsed.startedAt === "number"
+    ) {
+      return {
+        id: parsed.id,
+        startedAt: parsed.startedAt
+      };
+    }
+  } catch {
+    // A new ephemeral session is fine when storage is unavailable.
+  }
+
+  const session = createChatSession();
+
+  try {
+    window.localStorage.setItem(CHAT_SESSION_STORAGE_KEY, JSON.stringify(session));
+  } catch {
+    // Ignore storage failures; the in-memory session still protects this tab.
+  }
+
+  return session;
 }
 
 function getChatErrorMessage(data: ChatApiResponse | null) {
@@ -493,6 +548,11 @@ export function ChatWidget() {
   const followupCaptureSentRef = useRef(false);
   const contactCaptureInFlightRef = useRef(false);
   const toastTimerRef = useRef<number | null>(null);
+  const chatSessionRef = useRef<ChatSession | null>(null);
+
+  useEffect(() => {
+    chatSessionRef.current = chatSessionRef.current || getChatSession();
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -696,6 +756,7 @@ export function ChatWidget() {
       role: "user",
       content
     };
+    chatSessionRef.current = chatSessionRef.current || getChatSession();
     const nextMessages = [
       ...getApiMessagesWithContactCaptureMarkers(
         messages,
@@ -717,6 +778,9 @@ export function ChatWidget() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
+          session_id: chatSessionRef.current.id,
+          session_started_at: chatSessionRef.current.startedAt,
+          website: "",
           messages: nextMessages.map(({ role, content: messageContent }) => ({
             role,
             content: messageContent
