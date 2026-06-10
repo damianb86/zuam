@@ -27,8 +27,8 @@ export function ServiceCard({ service }: { service: Service }) {
   const Icon = iconMap[service.icon];
 
   return (
-    <article className="surface-card reveal flex h-full flex-col p-6">
-      <div className="mb-6 grid h-12 w-12 place-items-center rounded-[8px] bg-ink text-white">
+    <article className="surface-card reveal flex h-full flex-col p-7">
+      <div className="icon-box mb-6">
         <Icon size={22} aria-hidden="true" />
       </div>
       <h3 className="text-xl font-semibold text-ink">{service.title}</h3>

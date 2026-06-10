@@ -9,19 +9,22 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#071226",
-        night: "#101B3A",
-        mist: "#F7F8FC",
-        paper: "#FAFAFF",
-        violet: "#9B7CFF",
-        lavender: "#C9BBFF",
-        slateText: "#5D6475",
-        teal: "#26B8A6",
-        brass: "#B68C3C"
+        ink: "#24384A",
+        night: "#385A75",
+        mist: "#F1ECE3",
+        paper: "#F7F5F1",
+        surface: "#FFFFFF",
+        sand: "#E7DDC6",
+        azure: "#D9EAF7",
+        violet: "#4B6F8E",
+        lavender: "#D9EAF7",
+        slateText: "#657487",
+        teal: "#6FA7A0",
+        brass: "#E7DDC6"
       },
       boxShadow: {
-        soft: "0 18px 50px rgba(7, 18, 38, 0.08)",
-        button: "0 14px 30px rgba(7, 18, 38, 0.18)"
+        soft: "0 14px 40px rgba(36, 56, 74, 0.06)",
+        button: "0 14px 30px rgba(75, 111, 142, 0.24)"
       },
       fontFamily: {
         sans: [

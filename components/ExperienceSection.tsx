@@ -24,7 +24,7 @@ export function ExperienceSection() {
 
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {experienceClaims.map((claim) => (
-            <div key={claim} className="rounded-[8px] border border-ink/10 bg-white/75 px-5 py-4 text-sm font-semibold text-ink shadow-sm">
+            <div key={claim} className="rounded-[10px] border border-ink/10 bg-white/75 px-5 py-4 text-sm font-semibold text-ink shadow-sm">
               {claim}
             </div>
           ))}

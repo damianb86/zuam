@@ -4,7 +4,7 @@ services:
   static:
     build:
       context: .
-      dockerfile: Dockerfile.static
+      dockerfile: ${STATIC_DOCKERFILE:-Dockerfile.static}
       args:
         NEXT_PUBLIC_ZUAM_API_BASE_URL: ${NEXT_PUBLIC_ZUAM_API_BASE_URL:-/api}
         NEXT_PUBLIC_OPENAI_CHAT_ASSISTANT_NAME: ${NEXT_PUBLIC_OPENAI_CHAT_ASSISTANT_NAME:-Zuam AI Assistant}

@@ -4,7 +4,7 @@ export function FinalCta() {
   return (
     <section className="pb-20 sm:pb-24 lg:pb-28">
       <div className="section-shell">
-        <div className="rounded-[8px] border border-ink/10 bg-white p-6 shadow-soft sm:p-8 lg:p-10">
+        <div className="rounded-[24px] border border-ink/10 bg-white p-6 shadow-soft sm:p-8 lg:p-10">
           <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
               <h2 className="max-w-3xl text-3xl font-semibold leading-tight text-ink sm:text-4xl">

@@ -3,7 +3,7 @@ import Image from "next/image";
 export function DecorativeZ() {
   return (
     <div
-      className="hero-panel hero-logo-panel relative min-h-[320px] overflow-hidden rounded-[8px] border border-ink/10 shadow-soft sm:min-h-[460px]"
+      className="hero-panel hero-logo-panel relative min-h-[320px] overflow-hidden rounded-[24px] border border-ink/10 shadow-soft sm:min-h-[460px]"
       data-visual="interactive-logo"
     >
       <div className="hero-panel-aura pointer-events-none absolute inset-0" />

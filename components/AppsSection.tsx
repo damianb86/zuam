@@ -19,17 +19,17 @@ export function AppsSection() {
         <SectionHeading
           eyebrow="Our apps"
           title="Shopify apps in the Zuam ecosystem."
-          description="These products are structured in editable data files so descriptions, icons, statuses, and Shopify App Store URLs can evolve as each app becomes available."
+          description="These products are structured in editable data files so descriptions, icons, statuses, and Shopify app links can evolve as each app becomes available."
           align="center"
         />
 
-        <div className="mt-14 grid gap-5 lg:grid-cols-3">
+        <div className="mx-auto mt-14 grid max-w-5xl gap-5 sm:grid-cols-2">
           {apps.map((app) => (
-            <article key={app.name} className="surface-card reveal flex h-full flex-col p-6">
+            <article key={app.name} className="surface-card reveal flex h-full flex-col p-7">
               <div className="mb-6 flex items-start justify-between gap-4">
-                <div className="grid h-16 w-16 place-items-center overflow-hidden rounded-[8px] border border-ink/10 bg-[linear-gradient(135deg,#071226,#9B7CFF)] text-lg font-semibold text-white">
+                <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-[22px] text-lg font-semibold text-ink">
                   {app.icon ? (
-                    <Image src={app.icon} alt={`${app.name} icon`} width={64} height={64} className="h-full w-full object-cover" />
+                    <Image src={app.icon} alt={`${app.name} icon`} width={96} height={96} className="h-full w-full object-contain" />
                   ) : (
                     getInitials(app.name)
                   )}
@@ -53,7 +53,7 @@ export function AppsSection() {
                   rel="noreferrer"
                   className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-ink transition hover:text-violet focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2"
                 >
-                  View on Shopify App Store
+                  View Shopify app
                   <ArrowUpRight size={17} aria-hidden="true" />
                 </a>
               ) : (

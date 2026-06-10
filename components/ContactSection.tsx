@@ -87,7 +87,7 @@ export function ContactSection() {
           <div className="mt-8 space-y-5">
             <a
               href={`mailto:${CONTACT_EMAIL}`}
-              className="inline-flex items-center gap-3 rounded-[8px] border border-ink/10 bg-white px-4 py-3 font-semibold text-ink transition hover:border-violet/40 hover:text-violet focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2"
+              className="inline-flex items-center gap-3 rounded-[10px] border border-ink/10 bg-white px-4 py-3 font-semibold text-ink transition hover:border-violet/40 hover:text-violet focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2"
             >
               <Mail size={18} aria-hidden="true" />
               {CONTACT_EMAIL}
@@ -116,7 +116,7 @@ export function ContactSection() {
               <input
                 value={form.name}
                 onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                className="mt-2 h-12 w-full rounded-[8px] border border-ink/10 bg-white px-4 text-ink outline-none transition placeholder:text-slateText/50 focus:border-violet focus:ring-4 focus:ring-violet/20"
+                className="mt-2 h-12 w-full rounded-[10px] border border-ink/10 bg-white px-4 text-ink outline-none transition placeholder:text-slateText/50 focus:border-violet focus:ring-4 focus:ring-violet/20"
                 placeholder="Your name"
                 autoComplete="name"
                 required
@@ -129,7 +129,7 @@ export function ContactSection() {
                 type="email"
                 value={form.email}
                 onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-                className="mt-2 h-12 w-full rounded-[8px] border border-ink/10 bg-white px-4 text-ink outline-none transition placeholder:text-slateText/50 focus:border-violet focus:ring-4 focus:ring-violet/20"
+                className="mt-2 h-12 w-full rounded-[10px] border border-ink/10 bg-white px-4 text-ink outline-none transition placeholder:text-slateText/50 focus:border-violet focus:ring-4 focus:ring-violet/20"
                 placeholder="you@company.com"
                 autoComplete="email"
                 required
@@ -142,7 +142,7 @@ export function ContactSection() {
             <input
               value={form.company}
               onChange={(event) => setForm((current) => ({ ...current, company: event.target.value }))}
-              className="mt-2 h-12 w-full rounded-[8px] border border-ink/10 bg-white px-4 text-ink outline-none transition placeholder:text-slateText/50 focus:border-violet focus:ring-4 focus:ring-violet/20"
+              className="mt-2 h-12 w-full rounded-[10px] border border-ink/10 bg-white px-4 text-ink outline-none transition placeholder:text-slateText/50 focus:border-violet focus:ring-4 focus:ring-violet/20"
               placeholder="Company or project"
               autoComplete="organization"
             />
@@ -153,7 +153,7 @@ export function ContactSection() {
             <textarea
               value={form.message}
               onChange={(event) => setForm((current) => ({ ...current, message: event.target.value }))}
-              className="mt-2 min-h-36 w-full resize-y rounded-[8px] border border-ink/10 bg-white px-4 py-3 text-ink outline-none transition placeholder:text-slateText/50 focus:border-violet focus:ring-4 focus:ring-violet/20"
+              className="mt-2 min-h-36 w-full resize-y rounded-[10px] border border-ink/10 bg-white px-4 py-3 text-ink outline-none transition placeholder:text-slateText/50 focus:border-violet focus:ring-4 focus:ring-violet/20"
               placeholder="Tell us what you want to build, improve, or automate."
               required
             />

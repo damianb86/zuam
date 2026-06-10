@@ -15,7 +15,7 @@ export function ShopifySection() {
 
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
             {shopifyCapabilities.map((capability) => (
-              <div key={capability} className="flex items-center gap-3 rounded-[8px] border border-ink/10 bg-white/80 px-4 py-3">
+              <div key={capability} className="flex items-center gap-3 rounded-[10px] border border-ink/10 bg-white/80 px-4 py-3">
                 <Check size={18} className="text-teal" aria-hidden="true" />
                 <span className="text-sm font-semibold text-ink">{capability}</span>
               </div>
@@ -23,11 +23,11 @@ export function ShopifySection() {
           </div>
         </div>
 
-        <div className="reveal relative min-h-[520px] overflow-hidden rounded-[8px] border border-ink/10 bg-ink p-5 text-white shadow-soft">
-          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(155,124,255,0.22),transparent_38%),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[length:auto,44px_44px]" />
-          <div className="relative z-10 flex items-center justify-between rounded-[8px] border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
+        <div className="reveal relative min-h-[520px] overflow-hidden rounded-[24px] border border-ink/10 bg-ink p-5 text-white shadow-soft">
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(217,234,247,0.18),transparent_38%),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[length:auto,44px_44px]" />
+          <div className="relative z-10 flex items-center justify-between rounded-[16px] border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-[8px] bg-white text-ink">
+              <span className="grid h-10 w-10 place-items-center rounded-[10px] bg-white text-ink">
                 <ShoppingCart size={20} aria-hidden="true" />
               </span>
               <div>
@@ -43,7 +43,7 @@ export function ShopifySection() {
           <div className="relative z-10 mt-5 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
             <div className="space-y-4">
               {["Theme", "Checkout", "App layer"].map((item, index) => (
-                <div key={item} className="rounded-[8px] border border-white/10 bg-white/10 p-4 backdrop-blur">
+                <div key={item} className="rounded-[16px] border border-white/10 bg-white/10 p-4 backdrop-blur">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lavender">
                     Module 0{index + 1}
                   </p>
@@ -58,17 +58,17 @@ export function ShopifySection() {
               ))}
             </div>
 
-            <div className="rounded-[8px] border border-white/10 bg-white/10 p-4 backdrop-blur">
+            <div className="rounded-[16px] border border-white/10 bg-white/10 p-4 backdrop-blur">
               <div className="grid grid-cols-2 gap-3">
                 {[1, 2, 3, 4].map((item) => (
-                  <div key={item} className="rounded-[8px] bg-white p-3 text-ink">
-                    <div className="aspect-[4/3] rounded-[6px] bg-[linear-gradient(135deg,#F7F8FC,#C9BBFF)]" />
+                  <div key={item} className="rounded-[10px] bg-white p-3 text-ink">
+                    <div className="aspect-[4/3] rounded-[10px] bg-[linear-gradient(135deg,#F7F5F1,#D9EAF7)]" />
                     <div className="mt-3 h-2 w-3/4 rounded-full bg-ink/20" />
                     <div className="mt-2 h-2 w-1/2 rounded-full bg-ink/10" />
                   </div>
                 ))}
               </div>
-              <div className="mt-4 rounded-[8px] border border-white/10 bg-ink/50 p-4">
+              <div className="mt-4 rounded-[16px] border border-white/10 bg-ink/50 p-4">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-white/70">Conversion path</span>
                   <span className="font-semibold text-teal">Optimized</span>
@@ -85,7 +85,7 @@ export function ShopifySection() {
           </div>
 
           <svg className="absolute bottom-8 right-8 z-0 h-56 w-56 opacity-35" viewBox="0 0 200 200" aria-hidden="true">
-            <path d="M28 46 H158 L78 100 H172 L56 158" fill="none" stroke="#C9BBFF" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M28 46 H158 L78 100 H172 L56 158" fill="none" stroke="#D9EAF7" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
       </div>

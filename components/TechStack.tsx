@@ -16,7 +16,7 @@ export function TechStack() {
             {technologies.map((technology) => (
               <div
                 key={technology}
-                className="reveal rounded-[8px] border border-ink/10 bg-white/80 px-4 py-4 text-sm font-semibold text-ink shadow-sm transition hover:-translate-y-1 hover:border-violet/40 hover:shadow-soft"
+                className="reveal rounded-[10px] border border-ink/10 bg-white/80 px-4 py-4 text-sm font-semibold text-ink shadow-sm transition hover:-translate-y-1 hover:border-violet/40 hover:shadow-soft"
               >
                 {technology}
               </div>

@@ -835,7 +835,7 @@ export function ChatWidget() {
       {toastMessage ? (
         <div
           role="status"
-          className="pointer-events-auto fixed left-1/2 top-1/2 z-[110] w-[min(360px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-[8px] border border-ink/10 bg-ink px-5 py-4 text-center text-sm font-semibold leading-6 text-white shadow-[0_24px_70px_rgba(7,18,38,0.28)]"
+          className="pointer-events-auto fixed left-1/2 top-1/2 z-[110] w-[min(360px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-[16px] border border-ink/10 bg-violet px-5 py-4 text-center text-sm font-semibold leading-6 text-white shadow-[0_24px_70px_rgba(36,56,74,0.28)]"
         >
           {toastMessage}
         </div>
@@ -843,7 +843,7 @@ export function ChatWidget() {
 
       {isOpen ? (
         <section
-          className="chat-panel pointer-events-auto fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))] flex flex-col overflow-hidden rounded-[8px] border border-ink/10 bg-white shadow-[0_28px_80px_rgba(7,18,38,0.24)] sm:bottom-6 sm:left-auto sm:right-6 sm:top-auto sm:h-[min(680px,calc(100dvh-3rem))] sm:w-[420px]"
+          className="chat-panel pointer-events-auto fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))] flex flex-col overflow-hidden rounded-[24px] border border-ink/10 bg-white shadow-[0_28px_80px_rgba(36,56,74,0.24)] sm:bottom-6 sm:left-auto sm:right-6 sm:top-auto sm:h-[min(680px,calc(100dvh-3rem))] sm:w-[420px]"
           aria-label={assistantName}
         >
           <header className="chat-panel-header flex items-center gap-2 border-b border-ink/10 bg-white px-3 py-3 sm:gap-3 sm:px-4">
@@ -898,9 +898,9 @@ export function ChatWidget() {
                   }`}
                 >
                   <div
-                    className={`max-w-[90%] rounded-[8px] px-4 py-3 text-sm leading-6 sm:max-w-[86%] ${
+                    className={`max-w-[90%] rounded-[16px] px-4 py-3 text-sm leading-6 sm:max-w-[86%] ${
                       message.role === "user"
-                        ? "chat-bubble-user bg-ink text-white"
+                        ? "chat-bubble-user bg-violet text-white"
                         : "chat-bubble-assistant border border-ink/10 bg-white text-ink shadow-soft"
                     }`}
                   >
@@ -913,7 +913,7 @@ export function ChatWidget() {
 
               {isSending ? (
                 <div className="flex justify-start">
-                  <div className="chat-bubble-assistant rounded-[8px] border border-ink/10 bg-white px-4 py-3 text-sm font-medium text-slateText shadow-soft">
+                  <div className="chat-bubble-assistant rounded-[16px] border border-ink/10 bg-white px-4 py-3 text-sm font-medium text-slateText shadow-soft">
                     Thinking...
                   </div>
                 </div>
@@ -934,7 +934,7 @@ export function ChatWidget() {
                       key={suggestion.prompt}
                       type="button"
                       onClick={() => void sendMessage(suggestion.prompt)}
-                      className="chat-suggestion-button flex min-h-11 items-center gap-2 rounded-[8px] border border-ink/10 bg-white px-3 py-2 text-left text-xs font-semibold leading-5 text-ink transition hover:border-violet/50 hover:bg-paper focus:outline-none focus:ring-2 focus:ring-violet"
+                      className="chat-suggestion-button flex min-h-11 items-center gap-2 rounded-[10px] border border-ink/10 bg-white px-3 py-2 text-left text-xs font-semibold leading-5 text-ink transition hover:border-violet/50 hover:bg-paper focus:outline-none focus:ring-2 focus:ring-violet"
                     >
                       <SuggestionIcon
                         className="h-4 w-4 shrink-0 text-violet"
@@ -955,7 +955,7 @@ export function ChatWidget() {
             {chatError ? (
               <p
                 role="alert"
-                className="mb-2 rounded-[8px] bg-red-50 px-3 py-2 text-xs font-medium leading-5 text-red-700"
+                className="mb-2 rounded-[10px] bg-red-50 px-3 py-2 text-xs font-medium leading-5 text-red-700"
               >
                 {chatError}
               </p>
@@ -967,14 +967,14 @@ export function ChatWidget() {
                 onKeyDown={handleKeyDown}
                 placeholder="Ask about Shopify, apps, performance, AI, or custom software..."
                 rows={2}
-                className="chat-input max-h-28 min-h-14 flex-1 resize-none rounded-[8px] border border-ink/15 bg-white px-4 py-3 text-base leading-5 text-ink outline-none transition placeholder:text-slateText/75 focus:border-violet focus:ring-2 focus:ring-violet/20 sm:max-h-32 sm:text-sm"
+                className="chat-input max-h-28 min-h-14 flex-1 resize-none rounded-[10px] border border-ink/15 bg-white px-4 py-3 text-base leading-5 text-ink outline-none transition placeholder:text-slateText/75 focus:border-violet focus:ring-2 focus:ring-violet/20 sm:max-h-32 sm:text-sm"
               />
               <button
                 type="submit"
                 aria-label="Send message"
                 title="Send message"
                 disabled={!input.trim() || isSending}
-                className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-ink text-white shadow-button transition hover:-translate-y-0.5 hover:bg-night focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-violet text-white shadow-button transition hover:-translate-y-0.5 hover:bg-night focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
               >
                 <Send size={18} aria-hidden="true" />
               </button>
@@ -989,9 +989,8 @@ export function ChatWidget() {
           aria-label="Open Zuam AI assistant"
           aria-expanded={isOpen}
           onClick={() => setIsOpen(true)}
-          className="pointer-events-auto group fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] grid h-16 w-16 place-items-center overflow-hidden rounded-full border border-white/14 bg-black text-white shadow-[0_18px_45px_rgba(7,18,38,0.3)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_65px_rgba(7,18,38,0.36)] focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2 sm:bottom-6 sm:right-6"
+          className="pointer-events-auto group fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] grid h-16 w-16 place-items-center overflow-hidden rounded-full border border-white/20 bg-[#050607] text-white shadow-[0_18px_45px_rgba(5,6,7,0.34)] transition duration-300 hover:-translate-y-1 hover:bg-[#050607] hover:shadow-[0_24px_65px_rgba(5,6,7,0.42)] focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2 sm:bottom-6 sm:right-6"
         >
-          <span className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_25%,rgba(155,124,255,0.32),transparent_42%)] opacity-90" />
           <Image
             src="/assets/ai-assistant-icon-gradient.png"
             alt=""

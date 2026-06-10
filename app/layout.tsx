@@ -4,19 +4,12 @@ import "./globals.css";
 
 const themeInitScript = `
 (function () {
-  var storedTheme;
-
   try {
-    storedTheme = window.localStorage && window.localStorage.getItem("zuam-theme");
+    window.localStorage && window.localStorage.removeItem("zuam-theme");
   } catch (error) {}
 
   try {
-    var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    var theme = storedTheme === "light" || storedTheme === "dark"
-      ? storedTheme
-      : prefersDark
-        ? "dark"
-        : "light";
+    var theme = "light";
 
     document.documentElement.classList.toggle("dark", theme === "dark");
     document.documentElement.dataset.theme = theme;
@@ -69,8 +62,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FAFAFF" },
-    { media: "(prefers-color-scheme: dark)", color: "#071226" }
+    { media: "(prefers-color-scheme: light)", color: "#F7F5F1" },
+    { media: "(prefers-color-scheme: dark)", color: "#172A38" }
   ],
   colorScheme: "light dark",
   initialScale: 1,

@@ -21,7 +21,7 @@ export function Navbar() {
     <header
       className={`fixed left-0 right-0 top-0 z-50 transition duration-300 ${
         isScrolled
-          ? "border-b border-ink/10 bg-paper/80 shadow-[0_12px_40px_rgba(7,18,38,0.08)] backdrop-blur-xl"
+          ? "border-b border-ink/10 bg-paper/80 shadow-[0_12px_40px_rgba(36,56,74,0.08)] backdrop-blur-xl"
           : "bg-paper/60 backdrop-blur-md"
       }`}
     >
@@ -91,7 +91,7 @@ export function Navbar() {
             <a
               key={link.href}
               href={link.href}
-              className="rounded-[8px] px-4 py-3 text-sm font-semibold text-ink transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2"
+              className="rounded-[10px] px-4 py-3 text-sm font-semibold text-ink transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2"
               onClick={() => setIsOpen(false)}
             >
               {link.label}

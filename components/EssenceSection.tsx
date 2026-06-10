@@ -16,7 +16,7 @@ export function EssenceSection() {
             {pillars.map((pillar, index) => (
               <article key={pillar.title} className="surface-card reveal p-6">
                 <div className="mb-5 flex items-center gap-3">
-                  <span className="grid h-9 w-9 place-items-center rounded-[8px] bg-ink text-sm font-semibold text-white">
+                  <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-sand text-sm font-semibold text-ink">
                     0{index + 1}
                   </span>
                   <h3 className="text-xl font-semibold text-ink">{pillar.title}</h3>

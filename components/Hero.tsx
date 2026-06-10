@@ -48,7 +48,7 @@ export function Hero() {
             {proofPoints.map((point) => (
               <div
                 key={point}
-                className="rounded-[8px] border border-ink/10 bg-white/70 px-4 py-3 text-sm font-semibold text-ink backdrop-blur"
+                className="rounded-[10px] border border-ink/10 bg-white/70 px-4 py-3 text-sm font-semibold text-ink backdrop-blur"
               >
                 {point}
               </div>
