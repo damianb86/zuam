@@ -186,10 +186,19 @@ fi
 
 cd "$APP_DIR"
 
+STATIC_DOCKERFILE_VALUE=${STATIC_DOCKERFILE:-Dockerfile.static}
+if [ "$STATIC_DOCKERFILE_VALUE" = "Dockerfile.static-prebuilt" ] && [ ! -d "$APP_DIR/out" ]; then
+  echo "Missing static export directory: $APP_DIR/out" >&2
+  echo "Dockerfile.static-prebuilt expects an existing Next static export." >&2
+  echo "Run 'npm run build' before deploy, or use STATIC_DOCKERFILE=Dockerfile.static to build inside Docker." >&2
+  exit 1
+fi
+
 echo "Deploying $APP_DISPLAY_NAME"
 echo "  app env:    $APP_ENV_FILE"
 echo "  shared env: $SHARED_ENV_FILE"
 echo "  network:    $NETWORK_NAME"
+echo "  static df:  $STATIC_DOCKERFILE_VALUE"
 echo
 echo "Validating docker-compose.yml with both env files..."
 compose config >/dev/null
