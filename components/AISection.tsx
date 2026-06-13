@@ -1,47 +1,98 @@
-import { aiExamples } from "@/data/site";
+import {
+  ArrowRight,
+  BadgeCheck,
+  BookOpenCheck,
+  Bot,
+  BrainCircuit,
+  ClipboardCheck,
+  DatabaseZap,
+  FileText,
+  ListChecks,
+  LockKeyhole,
+  MessageSquareText,
+  Network,
+  Workflow
+} from "lucide-react";
+import { aiGroups, type AICardIcon } from "@/data/site";
 import { SectionHeading } from "@/components/SectionHeading";
+
+const iconMap: Record<AICardIcon, typeof Bot> = {
+  assistant: MessageSquareText,
+  language: Bot,
+  wizard: ListChecks,
+  reviews: FileText,
+  catalog: BrainCircuit,
+  automation: Workflow,
+  systems: DatabaseZap,
+  providers: Network,
+  control: BadgeCheck,
+  context: BookOpenCheck,
+  evaluation: ClipboardCheck,
+  privacy: LockKeyhole
+};
 
 export function AISection() {
   return (
-    <section className="section-padding">
+    <section id="ai" aria-labelledby="ai-heading" className="section-padding bg-ink text-white">
       <div className="section-shell">
-        <div className="overflow-hidden rounded-[24px] bg-ink text-white shadow-soft">
-          <div className="grid gap-10 p-6 sm:p-8 lg:grid-cols-[0.9fr_1.1fr] lg:p-12">
-            <div>
-              <SectionHeading
-                eyebrow="AI first"
-                title="Applied AI where the business needs it."
-                description="We do not add artificial intelligence as decoration. We use it to create faster systems: automate tasks, analyze information, support decisions, improve experiences, and free operational time."
-                tone="dark"
-              />
-            </div>
+        <SectionHeading
+          id="ai-heading"
+          eyebrow="AI-powered Shopify & Applied AI"
+          title="AI systems designed around real commerce workflows."
+          description="Zuam builds AI-powered tools that connect with your data, workflows, and existing systems - helping teams automate repetitive work, guide users, analyze information, and create better customer experiences without relying on generic chatbot experiences."
+          align="center"
+          tone="dark"
+        />
 
-            <div className="relative min-h-[420px] overflow-hidden rounded-[16px] border border-white/10 bg-white/10 p-5">
-              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(180deg,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[length:42px_42px]" />
-              <svg className="absolute inset-0 h-full w-full opacity-80" viewBox="0 0 620 420" aria-hidden="true">
-                <path d="M82 90 H322 L198 204 H462 L292 330" fill="none" stroke="#D9EAF7" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M110 126 C220 80 300 170 392 112 C470 62 520 104 556 144" fill="none" stroke="#6FA7A0" strokeWidth="2" strokeDasharray="8 10" />
-                <path d="M118 308 C224 254 316 340 414 260 C480 206 528 242 570 286" fill="none" stroke="#E7DDC6" strokeWidth="2" strokeDasharray="8 10" />
-                {[82, 198, 292, 322, 462, 110, 392, 556, 118, 414, 570].map((point, index) => (
-                  <circle
-                    key={`${point}-${index}`}
-                    cx={point}
-                    cy={[90, 204, 330, 90, 204, 126, 112, 144, 308, 260, 286][index]}
-                    r={index < 5 ? 8 : 5}
-                    fill={index < 5 ? "#FFFFFF" : "#6FA7A0"}
-                  />
-                ))}
-              </svg>
+        <div className="mt-14 space-y-8">
+          {aiGroups.map((group) => (
+            <div
+              key={group.title}
+              className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4 sm:p-6"
+            >
+              <h3 className="text-2xl font-semibold text-white">{group.title}</h3>
+              <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {group.cards.map((card) => {
+                  const Icon = iconMap[card.icon];
 
-              <div className="relative z-10 grid gap-3 sm:grid-cols-2">
-                {aiExamples.map((example) => (
-                  <div key={example} className="rounded-[10px] border border-white/10 bg-ink/70 px-4 py-3 text-sm font-semibold text-white/90 backdrop-blur">
-                    {example}
-                  </div>
-                ))}
+                  return (
+                    <article
+                      key={card.title}
+                      className="reveal flex h-full flex-col rounded-[16px] border border-white/10 bg-white/10 p-5 backdrop-blur transition duration-300 hover:border-white/20 hover:bg-white/[0.13]"
+                    >
+                      <span className="grid h-11 w-11 place-items-center rounded-[10px] bg-white text-ink">
+                        <Icon size={20} aria-hidden="true" />
+                      </span>
+                      <h4 className="mt-5 text-lg font-semibold text-white">
+                        {card.title}
+                      </h4>
+                      <p className="mt-3 flex-1 leading-7 text-white/70">
+                        {card.description}
+                      </p>
+                    </article>
+                  );
+                })}
               </div>
             </div>
+          ))}
+        </div>
+
+        <div className="mt-12 grid gap-6 border-t border-white/10 pt-8 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div>
+            <p className="max-w-3xl text-lg leading-8 text-white/78">
+              AI becomes valuable when it is connected to the actual work your
+              team needs to do. Zuam designs AI features around specific
+              business outcomes, not generic prompts.
+            </p>
+            <p className="mt-4 max-w-3xl text-sm font-medium leading-6 text-white/55">
+              You can also try the AI assistant on this site to see how Zuam
+              thinks about practical AI interfaces.
+            </p>
           </div>
+          <a href="#contact" className="button-primary bg-white text-ink hover:bg-lavender">
+            Discuss an AI workflow
+            <ArrowRight size={18} aria-hidden="true" />
+          </a>
         </div>
       </div>
     </section>

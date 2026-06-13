@@ -2,93 +2,164 @@
   "contactEmail": "contact@zuam.com",
   "brandProfile": {
     "name": "Zuam",
-    "summary": "Zuam is a software, Shopify, and applied artificial intelligence company for digital businesses.",
-    "positioning": "Zuam combines senior technical execution, product judgment, and business clarity to build useful, scalable, well-considered digital systems.",
+    "summary": "Zuam is a founder-led Shopify and Applied AI studio for serious commerce and business teams with meaningful technical needs.",
+    "positioning": "Zuam builds custom Shopify apps, Shopify integrations, AI-powered commerce workflows, commerce engineering, and custom web systems beyond off-the-shelf software.",
     "brandIdea": "The brand is rooted in the idea of thinking in motion: intelligence that reads, orders, and transforms complexity into direction. The Z works as a path that connects points, crosses information, finds patterns, and turns complexity into a clear next move.",
-    "notThis": "Zuam is not a generic AI company and should not present AI as magic. AI is used only where it creates practical value."
+    "notThis": "Zuam is not a broad AI advisory brand and should not present AI as effortless, fully self-directed, or a substitute for human judgment. AI is used only where it creates practical value inside real workflows."
   },
+  "audiences": [
+    {
+      "name": "Shopify merchants",
+      "description": "Stores that need custom apps, workflow automation, storefront improvements, integrations, or functionality that standard apps cannot fully solve."
+    },
+    {
+      "name": "Shopify Plus stores",
+      "description": "Serious commerce operations that need deeper platform work, custom logic, advanced integrations, and maintainable engineering."
+    },
+    {
+      "name": "Shopify and ecommerce agencies",
+      "description": "Agencies that need senior technical support for Shopify apps, complex integrations, AI features, or backend-heavy implementation."
+    },
+    {
+      "name": "Startups, SaaS companies, and business teams",
+      "description": "Teams with meaningful technical needs around custom web systems, applied AI, dashboards, integrations, and automation."
+    }
+  ],
   "services": [
     {
-      "name": "Shopify app development",
-      "description": "Custom, private, and public Shopify apps for operations, analytics, automation, content, conversion, integrations, and AI-powered workflows.",
+      "name": "Custom Shopify apps",
+      "description": "Store-specific and public Shopify apps for merchant workflows, embedded admin tools, storefront extensions, checkout logic, billing flows, reporting, automation, external integrations, and AI-powered commerce workflows connected to real app data.",
       "examples": [
-        "Private apps for a specific store.",
-        "Custom apps for internal workflows.",
+        "Store-specific apps for a specific merchant workflow.",
         "Public apps prepared for Shopify App Store review.",
+        "Embedded admin tools and app extensions.",
         "Shopify integrations with external APIs.",
-        "AI-enabled tools for analysis, content, automation, and assistance."
+        "AI-enabled tools for review analysis, product analysis, content workflows, automation, and assistance."
       ]
     },
     {
-      "name": "Shopify themes and storefronts",
-      "description": "Theme setup, theme development from scratch, custom sections, reusable blocks, responsive UX, mobile improvements, and Liquid, JavaScript, CSS, and asset optimization.",
+      "name": "Shopify engineering",
+      "description": "Theme architecture, Liquid development, performance optimization, app blocks, theme app extensions, technical SEO, tracking, headless commerce, and Shopify Plus-oriented extensibility.",
       "examples": [
-        "Custom sections and blocks.",
-        "Theme adaptation and visual improvements.",
-        "Responsive and mobile UX improvements.",
-        "Custom storefront functionality."
-      ]
-    },
-    {
-      "name": "New Shopify shop enablement",
-      "description": "Support for launching new Shopify stores, from store configuration and catalog structure to checkout, shipping, tracking, analytics, SEO basics, performance, and QA.",
-      "examples": [
-        "Store setup and launch workflows.",
-        "Catalog, collections, navigation, and core pages.",
-        "Payment, shipping, and app setup when permissions and market availability allow.",
+        "Theme architecture and custom storefront functionality.",
+        "Liquid, JavaScript, CSS, and asset optimization.",
+        "Theme app extensions and app blocks.",
         "Tracking, analytics, SEO foundations, and launch QA."
       ]
     },
     {
-      "name": "Shopify performance",
-      "description": "Audits and improvements for Core Web Vitals, load speed, app overhead, image optimization, Liquid rendering, JavaScript weight, deferred loading, and mobile experience.",
+      "name": "AI-powered commerce",
+      "description": "Practical AI systems for Shopify, ecommerce, and business operations, including AI commerce assistants, internal copilots, AI agent interfaces, guided wizards, business-specific assistants, review workflows, brand voice systems, product analysis, content generation, and natural-language interfaces connected to commerce data.",
       "examples": [
-        "Core Web Vitals analysis.",
-        "Script and app weight review.",
-        "Image and asset optimization.",
-        "Lighthouse and technical audits."
-      ],
-      "caveat": "Specific improvements depend on the current store, theme, installed apps, and Shopify platform constraints."
+        "AI chats, internal copilots, and AI agent interfaces that can read app data and interact with app functionality through natural language.",
+        "AI wizards that guide users step by step through complex app features.",
+        "Review generation and review analysis.",
+        "Text analysis plus brand voice extraction and generation.",
+        "OpenAI, Claude, and Gemini integrations."
+      ]
     },
     {
-      "name": "Conversion and UX",
-      "description": "Detection of buying friction and iterative improvements across home, product pages, collections, cart, search, navigation, trust signals, promotional messaging, visual hierarchy, and mobile UX.",
-      "caveat": "Zuam should not promise a fixed conversion lift without analysis and measurement."
+      "name": "Custom integrations",
+      "description": "Shopify integrations and reliable connections between ERPs, CRMs, fulfillment providers, analytics platforms, payment systems, internal dashboards, and third-party APIs.",
+      "examples": [
+        "Shopify integrations with external systems.",
+        "API design and data mapping.",
+        "Webhooks and background jobs.",
+        "Operational dashboards and reporting workflows."
+      ]
     },
     {
-      "name": "Technical SEO for Shopify",
-      "description": "Technical SEO foundations for Shopify stores, including metadata, URL structure, indexation, sitemap, canonicals, performance, structured data, collection architecture, and theme best practices.",
-      "caveat": "Zuam should not promise specific Google rankings."
+      "name": "Custom web systems",
+      "description": "Web applications, dashboards, admin tools, and backend systems designed around business workflows, data models, integrations, and long-term maintainability."
     },
     {
-      "name": "Automation and applied AI",
-      "description": "Practical AI systems for internal assistants, repetitive task automation, information analysis, data classification and enrichment, content workflows, intelligent reporting, support workflows, and integrations with OpenAI or other providers.",
-      "caveat": "AI should be framed as a practical tool, not as total automation without process, data, and risk review."
+      "name": "Technical consulting",
+      "description": "Architecture, feasibility analysis, Shopify app strategy, AI opportunity mapping, and senior technical guidance before or during implementation.",
+      "caveat": "Zuam should not promise specific rankings, fixed conversion improvements, automatic Shopify approval, or guaranteed integration feasibility before reviewing APIs, permissions, and constraints."
+    }
+  ],
+  "engagementModels": [
+    {
+      "name": "Custom Shopify App",
+      "description": "For merchants that need a store-specific or workflow-specific Shopify app built around their business rules."
+    },
+    {
+      "name": "Public Shopify App",
+      "description": "For products intended to be listed, distributed, or monetized through the Shopify App Store."
+    },
+    {
+      "name": "Shopify Engineering Support",
+      "description": "For merchants or agencies that need senior Shopify development support across apps, themes, integrations, and platform extensions."
+    },
+    {
+      "name": "AI Integration Sprint",
+      "description": "For businesses that want to identify, prototype, and implement practical AI use cases inside Shopify, ecommerce operations, or existing business systems."
+    },
+    {
+      "name": "Custom Workflow Build",
+      "description": "For companies that need dashboards, internal tools, automations, or web systems connected to their data and business processes."
+    },
+    {
+      "name": "Ongoing Technical Support",
+      "description": "For growing teams that need reliable senior development for continuous improvements, maintenance, app evolution, and technical decisions."
+    },
+    {
+      "name": "Technical Audit",
+      "description": "For merchants, agencies, or business teams that need a senior review of Shopify architecture, app strategy, integrations, AI workflows, performance, or technical risk."
     }
   ],
   "technologies": [
+    "JavaScript",
+    "TypeScript",
+    "React",
+    "Liquid",
+    "Hydrogen",
+    "Node.js",
+    "Ruby on Rails",
+    "PHP",
+    "API design",
+    "Background jobs",
+    "Data modeling",
     "Shopify",
     "Shopify Apps",
-    "Shopify Admin API",
-    "Shopify Storefront API",
-    "Liquid",
-    "React",
-    "Next.js",
-    "Remix",
-    "TypeScript",
-    "Node.js",
-    "GraphQL",
-    "REST APIs",
-    "PostgreSQL",
-    "Supabase",
-    "Prisma",
-    "Vercel",
-    "AWS",
-    "Tailwind CSS",
+    "GraphQL Admin API",
+    "Storefront API",
+    "Checkout Extensibility",
+    "Webhooks",
+    "Bulk operations",
+    "App Bridge",
+    "Polaris",
+    "React Router app architecture",
+    "Theme app extensions",
+    "Checkout UI Extensions",
+    "Shopify Functions",
+    "Cart and checkout validation",
+    "Discount customizations",
+    "Delivery customizations",
+    "Payment customizations",
+    "Cart Transform",
+    "Bundles",
+    "Selling plans",
+    "Subscriptions",
+    "Metafields",
+    "Metaobjects",
+    "Web pixel app extensions",
+    "Customer account UI extensions",
+    "Shopify App Pricing",
+    "Usage-based billing",
+    "API versioning",
     "OpenAI",
-    "Analytics and tracking integrations",
-    "Stripe",
-    "External systems depending on client needs"
+    "Claude",
+    "Gemini",
+    "Business-specific assistants",
+    "RAG workflows",
+    "Natural-language interfaces",
+    "Workflow automation",
+    "Drupal",
+    "Headless CMS",
+    "Custom dashboards",
+    "Third-party integrations",
+    "Internal tools"
   ],
   "limitations": [
     "Do not invent prices.",
@@ -98,6 +169,8 @@
     "Do not guarantee Shopify App Store approval.",
     "Do not guarantee specific SEO rankings.",
     "Do not guarantee fixed conversion improvements.",
+    "Do not guarantee AI accuracy, revenue increases, cost reductions, or ROI.",
+    "Do not describe AI as effortless, fully self-directed, or a substitute for a client's team.",
     "Do not provide specialized professional advice outside Zuam's commercial/software engagement scope.",
     "Do not ask for passwords, secrets, private keys, or store credentials in chat.",
     "Do not claim access to a user's Shopify store without explicit permissions.",
@@ -106,11 +179,11 @@
   "faqs": [
     {
       "question": "What does Zuam do?",
-      "answer": "Zuam builds software for digital businesses, with a focus on Shopify, custom apps, performance, conversion, technical SEO, automation, and applied AI. The team works from problem discovery through architecture, development, measurement, and improvement."
+      "answer": "Zuam is a founder-led Shopify and Applied AI studio that builds custom Shopify apps, Shopify integrations, AI-powered commerce workflows, commerce engineering, and custom web systems with direct senior involvement from discovery through production."
     },
     {
       "question": "Can Zuam build a custom Shopify app?",
-      "answer": "Yes, Zuam can generally build custom Shopify apps. The right next step is to understand whether the app is private, public, or internal; what data it needs to read or write; which integrations it needs; and what business problem it should solve."
+      "answer": "Yes, Zuam can generally build custom Shopify apps. The right next step is to understand whether the app is store-specific, public, or a limited visibility listing; what data it needs to read or write; which integrations it needs; and what business problem it should solve."
     },
     {
       "question": "Can Zuam publish apps on the Shopify App Store?",
@@ -122,11 +195,23 @@
     },
     {
       "question": "How long does a project take?",
-      "answer": "Timing depends on scope. A focused section or performance fix is different from a full app with integrations, admin UI, AI, or App Store publication. The safest approach is to define an initial scope and split work into stages."
+      "answer": "Timing depends on scope. A focused integration is different from a full app with admin UI, AI, external systems, or App Store publication. The safest approach is to define an initial scope and split work into stages."
     },
     {
       "question": "Can Zuam improve SEO or conversion?",
       "answer": "Zuam can improve the technical foundation for SEO and conversion by reducing friction, improving performance, and strengthening architecture. It should not promise specific rankings or fixed conversion percentages."
+    },
+    {
+      "question": "Can Zuam build AI workflows?",
+      "answer": "Yes, Zuam can evaluate and build practical AI workflows for Shopify, ecommerce operations, reviews, content, product analysis, internal tools, internal copilots, AI agent interfaces, and natural-language app experiences. The right approach depends on the data, workflow, risks, and systems involved."
+    },
+    {
+      "question": "Who does Zuam work with?",
+      "answer": "Zuam is best suited for Shopify merchants, Shopify Plus stores, ecommerce brands, Shopify and ecommerce agencies, startups, SaaS companies, and business teams with meaningful technical needs."
+    },
+    {
+      "question": "What proof does Zuam have for Shopify app work?",
+      "answer": "Zuam has public, installable Shopify apps listed in the Shopify App Store. These apps are standalone products and also proof that Zuam can design, ship, and maintain real Shopify software."
     },
     {
       "question": "How can someone contact Zuam?",
@@ -137,7 +222,7 @@
     "shopify": [
       "What is the Shopify store URL?",
       "What problem should the project solve?",
-      "Do you need an app, theme work, performance, SEO, conversion work, or an integration?",
+      "Do you need a custom Shopify app, Shopify integration, Shopify engineering, AI workflow, technical audit, or custom web system?",
       "Should the solution work only for your store or become a public Shopify app?",
       "Is there a target launch date or urgency?"
     ],
@@ -146,7 +231,7 @@
       "What data or systems are involved?",
       "Who would use the tool?",
       "What outcome should the AI workflow produce?",
-      "Are there privacy, security, or approval constraints?"
+      "Are there privacy, security, review, or approval constraints?"
     ],
     "apps": [
       "Does the app need to read or modify products, orders, customers, reviews, or other data?",
@@ -160,6 +245,8 @@
     "Default to the language used by the user. If the user writes in Spanish, Spanish is allowed. If the user's language is unclear, respond in English.",
     "Keep answers short, useful, and commercially oriented without sounding pushy.",
     "Keep general answers to one short paragraph, then move back to contact and project context.",
+    "Position Zuam as selective and technical, but do not reject small projects from serious merchants, agencies, Shopify Plus stores, startups, SaaS companies, or growing businesses.",
+    "Prefer CTAs such as Discuss a project, Discuss a Shopify project, Discuss a custom app, Explore AI workflows, Start a technical conversation, or Build a custom Shopify solution.",
     "When the user asks about services, explain only what Zuam can evaluate or provide at a high level, then ask for name, email, and what they need.",
     "When the user asks about apps, give only the relevant Zuam app context and ask whether Zuam should follow up.",
     "Do not create deliverables or standalone guidance; convert those requests into commercial intake for Zuam.",
@@ -184,8 +271,8 @@
     {
       "id": "gift-pulse",
       "name": "Gift Pulse: Gift Messages",
-      "shortDescription": "Lets customers add personalized gift messages that can be printed and included with an order.",
-      "longDescription": "Gift Pulse: Gift Messages lets customers add a personalized gift message to a product or purchase. The message can then be printed with a regular printer and physically included in the product box, improving gifting, personalization, and unboxing experiences.",
+      "shortDescription": "Let customers add personalized gift messages and give teams a simple way to print and include them with orders.",
+      "longDescription": "Gift Pulse: Gift Messages lets customers add personalized gift messages and gives teams a simple way to print and include them with orders, improving gifting, personalization, and unboxing experiences.",
       "tags": ["Shopify", "Gift message", "Personalization", "Fulfillment", "Customer experience"],
       "useCases": [
         "Gift shops and seasonal campaigns.",
@@ -196,13 +283,13 @@
       ],
       "url": "https://apps.shopify.com/gift-message-bridge-lite",
       "icon": "/assets/apps/gift-pulse.png",
-      "status": "available-or-in-progress"
+      "status": "live"
     },
     {
       "id": "redirect-pulse",
       "name": "Redirect Pulse: Bulk Redirects",
-      "shortDescription": "Archives products in bulk, creates associated redirects, and helps manage or undo those changes.",
-      "longDescription": "Redirect Pulse: Bulk Redirects helps Shopify teams retire products in a controlled way. It lets users select products, archive them in bulk, activate associated redirects, undo actions, and manage catalog retirement from a centralized process.",
+      "shortDescription": "Retire products in bulk, create related redirects, and keep catalog cleanup safer, faster, and easier to reverse.",
+      "longDescription": "Redirect Pulse: Bulk Redirects helps Shopify teams retire products in bulk, create related redirects, undo changes, and keep catalog cleanup safer, faster, and easier to reverse.",
       "tags": ["Shopify", "Redirects", "Bulk actions", "Product management", "Technical SEO"],
       "useCases": [
         "Retire discontinued products.",
@@ -213,13 +300,13 @@
       ],
       "url": "https://apps.shopify.com/redirectmapperlite",
       "icon": "/assets/apps/redirect-pulse.png",
-      "status": "available-or-in-progress"
+      "status": "live"
     },
     {
       "id": "reply-pulse-ai",
       "name": "Reply Pulse AI: Review Replies",
-      "shortDescription": "Helps teams respond to reviews in bulk with AI while preserving each brand's voice and tone.",
-      "longDescription": "Reply Pulse AI: Review Replies is designed to accelerate review responses with AI. It can generate responses that respect a company's brand voice, tone, and response rules, helping teams reduce manual work while keeping replies consistent. It is currently framed around review sources such as Jot.me, with room to connect other review systems depending on API availability and permissions.",
+      "shortDescription": "Generate on-brand AI-assisted review replies in bulk while keeping control over tone, quality, and final approval.",
+      "longDescription": "Reply Pulse AI: Review Replies helps teams generate on-brand AI-assisted review replies in bulk while keeping control over tone, quality, and final approval. It is designed to reduce manual work while keeping replies consistent.",
       "tags": ["Shopify", "AI", "Reviews", "Brand voice", "Automation"],
       "useCases": [
         "Reply to many reviews faster.",
@@ -230,16 +317,13 @@
       ],
       "url": "https://apps.shopify.com/reply-pilot",
       "icon": "/assets/apps/reply-pulse-ai.png",
-      "status": "available-or-in-progress",
-      "notes": [
-        "TODO: confirm the exact review integration name and whether it is Jot.me, Judge.me, or another source."
-      ]
+      "status": "live"
     },
     {
       "id": "product-pulse",
       "name": "Product Pulse: Quality Monitor",
-      "shortDescription": "Analyzes products in depth to identify problems, opportunities, and practical improvement actions.",
-      "longDescription": "Product Pulse: Quality Monitor is focused on deep product analysis for Shopify catalogs. It helps merchants review product data, spot weak signals, identify why a product may be underperforming, and prioritize actions that can improve commercial performance.",
+      "shortDescription": "Analyze product data, reviews, and operational signals to detect quality issues, improvement opportunities, and practical next actions.",
+      "longDescription": "Product Pulse: Quality Monitor analyzes product data, reviews, and operational signals to help merchants detect quality issues, improvement opportunities, and practical next actions across a Shopify catalog.",
       "tags": ["Shopify", "AI", "Product analytics", "Business intelligence", "Commercial performance"],
       "useCases": [
         "Identify products with potential issues.",
@@ -250,13 +334,13 @@
       ],
       "url": "https://apps.shopify.com/product-pulse-ia",
       "icon": "/assets/apps/product-pulse.png",
-      "status": "available-or-in-progress"
+      "status": "live"
     }
   ],
   "chatSuggestions": [
     {
-      "label": "What does Zuam do?",
-      "prompt": "What does Zuam do?",
+      "label": "What does Zuam build?",
+      "prompt": "What does Zuam build for Shopify and AI-powered commerce?",
       "icon": "sparkle"
     },
     {
@@ -270,13 +354,13 @@
       "icon": "settings-slider"
     },
     {
-      "label": "I want to improve store performance",
-      "prompt": "I want to improve the performance of my Shopify store.",
+      "label": "I need an integration",
+      "prompt": "I need a Shopify integration or custom commerce system.",
       "icon": "analytics"
     },
     {
-      "label": "Can Zuam integrate AI into my business?",
-      "prompt": "Can Zuam integrate AI into my business processes?",
+      "label": "I need an AI workflow",
+      "prompt": "I need an AI workflow for Shopify, ecommerce, or business operations.",
       "icon": "sparkle"
     },
     {

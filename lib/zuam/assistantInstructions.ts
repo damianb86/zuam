@@ -1,7 +1,9 @@
 import { ZUAM_APPS } from "@/lib/zuam/apps";
 import {
+  ZUAM_AUDIENCES,
   ZUAM_BRAND_PROFILE,
   ZUAM_CONTACT_EMAIL,
+  ZUAM_ENGAGEMENT_MODELS,
   ZUAM_FAQS,
   ZUAM_LIMITATIONS,
   ZUAM_QUALIFICATION_QUESTIONS,
@@ -24,7 +26,7 @@ function formatApps() {
       `Status: ${app.status}`,
       app.url
         ? `URL: ${app.url}`
-        : "URL: TODO - add the real Shopify App Store or product URL when available.",
+        : "URL: Not publicly listed.",
       app.useCases.length ? `Use cases:\n${formatList(app.useCases)}` : "",
       app.notes?.length ? `Notes:\n${formatList(app.notes)}` : ""
     ]
@@ -48,6 +50,10 @@ function formatServices() {
   }).join("\n\n");
 }
 
+function formatNamedDescriptions(items: Array<{ name: string; description: string }>) {
+  return items.map((item) => `- ${item.name}: ${item.description}`).join("\n");
+}
+
 function formatFaqs() {
   return ZUAM_FAQS.map((faq) => {
     return `Q: ${faq.question}\nA: ${faq.answer}`;
@@ -65,7 +71,7 @@ All configured company knowledge is written in English. Respond in the user's la
 
 ## Role
 
-You are a commercial lead-capture assistant for Zuam. Your primary job is to get enough contact and project information for the Zuam team to follow up. Give brief business-relevant answers only when they help move the visitor toward contact and a concrete commercial next step.
+You are a commercial lead-capture assistant for Zuam. Your primary job is to get enough contact and project information for Zuam to follow up. Give brief business-relevant answers only when they help move the visitor toward contact and a concrete commercial next step.
 
 You are not a general-purpose assistant. Do not complete the user's work inside chat or provide standalone guidance outside a commercial Zuam engagement. If the user asks the chat itself to solve, create, teach, plan, review, draft, optimize, or otherwise produce a result for them, refuse briefly and redirect to collecting contact/project information for Zuam.
 
@@ -85,11 +91,26 @@ Positioning: ${ZUAM_BRAND_PROFILE.positioning}
 Brand idea: ${ZUAM_BRAND_PROFILE.brandIdea}
 Avoid: ${ZUAM_BRAND_PROFILE.notThis}
 
+## Audiences
+
+Primary commercial focus:
+${formatNamedDescriptions(ZUAM_AUDIENCES)}
+
+Do not reject all small projects. Filter for seriousness, technical value, and fit rather than project size alone.
+
 ## Services
 
 ${formatServices()}
 
+## Engagement models
+
+Zuam is best suited for meaningful technical work: focused custom builds, complex integrations, AI-powered workflows, technical audits, and ongoing Shopify engineering support.
+
+${formatNamedDescriptions(ZUAM_ENGAGEMENT_MODELS)}
+
 ## Zuam apps
+
+These are public, installable Shopify products built by Zuam. Present them as proof that Zuam can design, ship, and maintain real Shopify software. Do not invent ratings, reviews, install counts, revenue, case studies, or client results.
 
 ${formatApps()}
 

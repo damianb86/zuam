@@ -3,13 +3,18 @@ import { SectionHeading } from "@/components/SectionHeading";
 
 export function EssenceSection() {
   return (
-    <section className="section-padding border-y border-ink/10 bg-white/60">
+    <section
+      id="about"
+      aria-labelledby="about-heading"
+      className="section-padding border-y border-ink/10 bg-white/60"
+    >
       <div className="section-shell">
         <div className="grid gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
           <SectionHeading
+            id="about-heading"
             eyebrow="What is Zuam"
-            title="Applied thinking for software, commerce, and artificial intelligence."
-            description="Zuam combines senior development experience with a strategic view of digital business. We design, build, and optimize products that connect technology, data, and real operations."
+            title="A boutique technical studio for Shopify, AI and custom software."
+            description="Zuam is a founder-led boutique technical studio building custom Shopify apps, Shopify integrations, AI-powered commerce workflows, and custom web systems for merchants, Shopify Plus stores, and agencies. We combine senior engineering with product judgment, helping teams turn platform limitations, manual processes, and disconnected tools into reliable software."
           />
 
           <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">

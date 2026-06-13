@@ -1,12 +1,21 @@
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import Image from "next/image";
 import { DecorativeZ } from "@/components/DecorativeZ";
 
-const proofPoints = ["Shopify apps", "Custom software", "Performance", "Applied AI"];
+const proofPoints = [
+  "17+ years in software engineering",
+  "5+ years building with Shopify",
+  "Public Shopify apps live and installable",
+  "Custom apps, APIs and AI workflows"
+];
 
 export function Hero() {
   return (
-    <section id="home" className="home-section relative overflow-hidden pt-24 sm:pt-32 lg:pt-36">
+    <section
+      id="home"
+      aria-labelledby="home-heading"
+      className="home-section relative overflow-hidden pt-24 sm:pt-32 lg:pt-36"
+    >
       <div className="section-shell grid items-center gap-9 pb-14 sm:gap-12 sm:pb-16 lg:grid-cols-[1fr_0.9fr] lg:pb-20">
         <div className="max-w-3xl">
           <div className="mb-6 inline-flex max-w-full items-center gap-3 rounded-full border border-ink/10 bg-white/80 px-3 py-2 text-sm font-semibold text-ink shadow-sm backdrop-blur sm:mb-7 sm:px-4">
@@ -20,26 +29,32 @@ export function Hero() {
                 className="logo-image h-6 w-6 object-contain"
               />
             </span>
-            <span className="min-w-0 truncate">Senior software | Shopify | Applied AI</span>
+            <span className="min-w-0 truncate">
+              Founder-led Shopify &amp; Applied AI Studio
+            </span>
           </div>
 
-          <h1 className="text-[2.65rem] font-semibold leading-[1.03] text-ink min-[390px]:text-5xl sm:text-6xl lg:text-7xl">
-            Intelligent software for businesses that sell, scale, and evolve.
+          <h1
+            id="home-heading"
+            className="text-[2.65rem] font-semibold leading-[1.03] text-ink min-[390px]:text-5xl sm:text-6xl lg:text-7xl"
+          >
+            Custom Shopify apps and AI-powered commerce systems.
           </h1>
 
           <p className="mt-6 max-w-2xl text-base leading-7 text-slateText sm:mt-7 sm:text-xl sm:leading-8">
-            At Zuam, we build Shopify applications, custom solutions, and AI
-            integrations that turn complex digital operations into clear, fast,
-            and profitable systems.
+            Zuam builds custom Shopify apps, Shopify integrations, AI-powered
+            commerce workflows, and custom web systems for merchants, Shopify
+            Plus stores, and agencies that need senior technical execution
+            beyond off-the-shelf software.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:mt-9 sm:flex-row">
             <a href="#contact" className="button-primary">
-              Work with us
+              Discuss a project
               <ArrowRight size={18} aria-hidden="true" />
             </a>
-            <a href="#what-we-do" className="button-secondary">
-              Explore services
+            <a href="#shopify" className="button-secondary">
+              Explore Shopify expertise
               <Sparkles size={18} aria-hidden="true" />
             </a>
           </div>
@@ -48,9 +63,10 @@ export function Hero() {
             {proofPoints.map((point) => (
               <div
                 key={point}
-                className="rounded-[10px] border border-ink/10 bg-white/70 px-4 py-3 text-sm font-semibold text-ink backdrop-blur"
+                className="flex min-h-[76px] items-start gap-3 rounded-[12px] border border-ink/10 bg-white/80 px-4 py-3 text-sm font-semibold leading-5 text-ink shadow-sm backdrop-blur"
               >
-                {point}
+                <CheckCircle2 size={17} className="mt-0.5 shrink-0 text-teal" aria-hidden="true" />
+                <span>{point}</span>
               </div>
             ))}
           </div>

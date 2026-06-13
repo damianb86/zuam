@@ -449,16 +449,24 @@ function getContactCaptureState(messages: ChatMessage[]): ContactCaptureState {
 function inferProjectType(value: string) {
   const text = normalizeContactText(value);
 
-  if (/\b(shopify|store|theme|liquid|checkout|app store)\b/.test(text)) {
-    return "Shopify";
+  if (/\b(custom app|shopify app|app store|embedded app|checkout|functions|polaris|app bridge)\b/.test(text)) {
+    return "Custom Shopify app";
   }
 
-  if (/\b(ai|ia|automation|automatizacion|assistant|chatbot|workflow)\b/.test(text)) {
-    return "AI and automation";
+  if (/\b(integration|integracion|integración|api|erp|crm|fulfillment|webhook|external system|third-party)\b/.test(text)) {
+    return "Shopify integration";
   }
 
-  if (/\b(performance|speed|seo|conversion|cro|analytics)\b/.test(text)) {
-    return "Performance and growth";
+  if (/\b(shopify|store|theme|liquid|plus|commerce|ecommerce)\b/.test(text)) {
+    return "Shopify engineering";
+  }
+
+  if (/\b(ai|ia|automation|automatizacion|automatización|assistant|copilot|agent|chatbot|workflow|rag)\b/.test(text)) {
+    return "AI workflow";
+  }
+
+  if (/\b(audit|auditoria|auditoría|review|architecture|risk|performance|speed|seo|conversion|cro|analytics)\b/.test(text)) {
+    return "Technical audit";
   }
 
   return "General project inquiry";
@@ -534,7 +542,7 @@ export function ChatWidget() {
       id: WELCOME_MESSAGE_ID,
       role: "assistant",
       content:
-        "Hi, I'm Zuam's assistant. To help you quickly and follow up, please share your name, email, and what you want to build, improve, or automate."
+        "Hi, I'm Zuam's assistant. Share your name, email, and the Shopify app, integration, AI workflow, audit, or custom system you want to discuss."
     }
   ]);
   const [input, setInput] = useState("");
@@ -965,7 +973,7 @@ export function ChatWidget() {
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about Shopify, apps, performance, AI, or custom software..."
+                placeholder="Ask about Shopify apps, AI workflows, integrations, or custom software..."
                 rows={2}
                 className="chat-input max-h-28 min-h-14 flex-1 resize-none rounded-[10px] border border-ink/15 bg-white px-4 py-3 text-base leading-5 text-ink outline-none transition placeholder:text-slateText/75 focus:border-violet focus:ring-2 focus:ring-violet/20 sm:max-h-32 sm:text-sm"
               />

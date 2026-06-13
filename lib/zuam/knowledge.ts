@@ -5,7 +5,9 @@ export const ZUAM_CONTACT_EMAIL =
   process.env.NEXT_PUBLIC_ZUAM_CONTACT_EMAIL || zuamContent.contactEmail;
 
 export const ZUAM_BRAND_PROFILE = zuamContent.brandProfile;
+export const ZUAM_AUDIENCES = zuamContent.audiences;
 export const ZUAM_SERVICES = zuamContent.services;
+export const ZUAM_ENGAGEMENT_MODELS = zuamContent.engagementModels;
 export const ZUAM_TECHNOLOGIES = zuamContent.technologies;
 export const ZUAM_LIMITATIONS = zuamContent.limitations;
 export const ZUAM_FAQS = zuamContent.faqs.map((faq) => ({
@@ -19,7 +21,9 @@ export const ZUAM_CONTACT_TOOLS = zuamContent.contactTools;
 export const ZUAM_KNOWLEDGE_BASE = {
   contactEmail: ZUAM_CONTACT_EMAIL,
   brandProfile: ZUAM_BRAND_PROFILE,
+  audiences: ZUAM_AUDIENCES,
   services: ZUAM_SERVICES,
+  engagementModels: ZUAM_ENGAGEMENT_MODELS,
   technologies: ZUAM_TECHNOLOGIES,
   apps: ZUAM_APPS,
   faqs: ZUAM_FAQS,

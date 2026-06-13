@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { CONTACT_EMAIL, navLinks } from "@/data/site";
+import { CONTACT_EMAIL, footerLinks } from "@/data/site";
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -26,15 +26,15 @@ export function Footer() {
               <span className="text-lg font-semibold tracking-wide">Zuam</span>
             </a>
             <p className="mt-4 max-w-sm text-sm leading-6 text-white/70">
-              Software, Shopify, and applied intelligence.
+              Founder-led Shopify and Applied AI studio building custom apps, integrations, and commerce systems.
             </p>
           </div>
 
           <div className="flex flex-col gap-5 lg:items-end">
             <nav className="flex flex-wrap gap-3" aria-label="Footer navigation">
-              {navLinks.map((link) => (
+              {footerLinks.map((link) => (
                 <a
-                  key={link.href}
+                  key={`${link.href}-${link.label}`}
                   href={link.href}
                   className="rounded-full px-3 py-2 text-sm font-medium text-white/70 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-lavender focus:ring-offset-2 focus:ring-offset-ink"
                 >

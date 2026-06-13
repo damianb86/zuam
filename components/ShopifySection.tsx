@@ -1,92 +1,75 @@
-import { Check, ShoppingCart } from "lucide-react";
-import { shopifyCapabilities } from "@/data/site";
+import { ArrowRight, Check } from "lucide-react";
+import { shopifyCapabilityGroups } from "@/data/site";
 import { SectionHeading } from "@/components/SectionHeading";
 
 export function ShopifySection() {
   return (
-    <section id="shopify" className="section-padding border-y border-ink/10 bg-white/60">
-      <div className="section-shell grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-        <div>
-          <SectionHeading
-            eyebrow="Shopify"
-            title="Shopify specialists for brands that need more than a store."
-            description="We work on Shopify from strategy to code: apps, themes, integrations, automations, performance optimization, and continuous improvement."
-          />
+    <section
+      id="shopify"
+      aria-labelledby="shopify-heading"
+      className="section-padding border-y border-ink/10 bg-white/60"
+    >
+      <div className="section-shell">
+        <SectionHeading
+          id="shopify-heading"
+          eyebrow="Shopify Engineering"
+          title="Shopify development for stores that need deeper platform work."
+          description="Zuam builds beyond standard theme customization. We work across Shopify's app, admin, storefront, and checkout layers to create systems that fit specific business rules, operational workflows, and customer experiences."
+          align="center"
+        />
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            {shopifyCapabilities.map((capability) => (
-              <div key={capability} className="flex items-center gap-3 rounded-[10px] border border-ink/10 bg-white/80 px-4 py-3">
-                <Check size={18} className="text-teal" aria-hidden="true" />
-                <span className="text-sm font-semibold text-ink">{capability}</span>
+        <p className="mx-auto mt-6 max-w-3xl text-center text-base leading-7 text-slateText sm:text-lg">
+          From focused store-specific tools to public Shopify apps, Zuam builds
+          with platform constraints, review requirements, and long-term
+          maintenance in mind. Zuam also works with Shopify and ecommerce
+          agencies that need senior technical execution behind the scenes.
+        </p>
+
+        <div className="mt-14 grid gap-5 lg:grid-cols-2">
+          {shopifyCapabilityGroups.map((group, index) => (
+            <article key={group.title} className="surface-card reveal flex h-full flex-col p-7">
+              <div className="mb-6">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-violet">
+                  Capability 0{index + 1}
+                </p>
+                <h3 className="text-2xl font-semibold leading-tight text-ink">{group.title}</h3>
+                <p className="mt-3 leading-7 text-slateText">{group.description}</p>
               </div>
-            ))}
-          </div>
-        </div>
 
-        <div className="reveal relative min-h-[520px] overflow-hidden rounded-[24px] border border-ink/10 bg-ink p-5 text-white shadow-soft">
-          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(217,234,247,0.18),transparent_38%),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[length:auto,44px_44px]" />
-          <div className="relative z-10 flex items-center justify-between rounded-[16px] border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
-            <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-[10px] bg-white text-ink">
-                <ShoppingCart size={20} aria-hidden="true" />
-              </span>
-              <div>
-                <p className="text-sm font-semibold">Commerce workspace</p>
-                <p className="text-xs text-white/60">Products, orders, insights</p>
-              </div>
-            </div>
-            <span className="rounded-full bg-teal/20 px-3 py-1 text-xs font-semibold text-teal">
-              Live
-            </span>
-          </div>
-
-          <div className="relative z-10 mt-5 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="space-y-4">
-              {["Theme", "Checkout", "App layer"].map((item, index) => (
-                <div key={item} className="rounded-[16px] border border-white/10 bg-white/10 p-4 backdrop-blur">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lavender">
-                    Module 0{index + 1}
-                  </p>
-                  <p className="mt-2 font-semibold">{item}</p>
-                  <div className="mt-4 h-2 rounded-full bg-white/10">
-                    <div
-                      className="h-2 rounded-full bg-lavender"
-                      style={{ width: `${64 + index * 9}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="rounded-[16px] border border-white/10 bg-white/10 p-4 backdrop-blur">
-              <div className="grid grid-cols-2 gap-3">
-                {[1, 2, 3, 4].map((item) => (
-                  <div key={item} className="rounded-[10px] bg-white p-3 text-ink">
-                    <div className="aspect-[4/3] rounded-[10px] bg-[linear-gradient(135deg,#F7F5F1,#D9EAF7)]" />
-                    <div className="mt-3 h-2 w-3/4 rounded-full bg-ink/20" />
-                    <div className="mt-2 h-2 w-1/2 rounded-full bg-ink/10" />
+              <div className="mt-auto grid gap-2.5 sm:grid-cols-2">
+                {group.items.map((item) => (
+                  <div
+                    key={item}
+                    className="flex min-w-0 items-start gap-3 rounded-[10px] border border-ink/10 bg-white/80 px-3.5 py-3"
+                  >
+                    <Check size={17} className="mt-0.5 shrink-0 text-teal" aria-hidden="true" />
+                    <span className="min-w-0 break-words text-sm font-semibold leading-5 text-ink">
+                      {item}
+                    </span>
                   </div>
                 ))}
               </div>
-              <div className="mt-4 rounded-[16px] border border-white/10 bg-ink/50 p-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-white/70">Conversion path</span>
-                  <span className="font-semibold text-teal">Optimized</span>
-                </div>
-                <div className="mt-4 flex items-center gap-2">
-                  {[0, 1, 2, 3].map((item) => (
-                    <div key={item} className="h-2 flex-1 rounded-full bg-white/20">
-                      <div className="h-2 rounded-full bg-teal" style={{ width: `${55 + item * 10}%` }} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+            </article>
+          ))}
+        </div>
 
-          <svg className="absolute bottom-8 right-8 z-0 h-56 w-56 opacity-35" viewBox="0 0 200 200" aria-hidden="true">
-            <path d="M28 46 H158 L78 100 H172 L56 158" fill="none" stroke="#D9EAF7" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+        <div className="reveal mt-12 overflow-hidden rounded-[24px] bg-ink text-white shadow-soft">
+          <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <h3 className="text-2xl font-semibold">
+                Need something Shopify does not support out of the box?
+              </h3>
+              <p className="mt-3 max-w-3xl leading-7 text-white/70">
+                Let&apos;s design the right app, extension, or integration for
+                the workflow, plan constraints, and operational reality behind
+                the store.
+              </p>
+            </div>
+            <a href="#contact" className="button-primary bg-white text-ink hover:bg-lavender">
+              Discuss a Shopify project
+              <ArrowRight size={18} aria-hidden="true" />
+            </a>
+          </div>
         </div>
       </div>
     </section>

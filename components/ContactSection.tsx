@@ -10,6 +10,7 @@ type FormState = {
   name: string;
   email: string;
   company: string;
+  projectType: string;
   message: string;
 };
 
@@ -23,8 +24,20 @@ const initialState: FormState = {
   name: "",
   email: "",
   company: "",
+  projectType: "",
   message: ""
 };
+
+const projectTypes = [
+  "Custom Shopify app",
+  "Shopify integration",
+  "AI workflow",
+  "Shopify Plus / advanced Shopify work",
+  "Agency Shopify development support",
+  "Custom web system",
+  "Technical audit",
+  "Not sure yet"
+];
 
 export function ContactSection() {
   const [form, setForm] = useState<FormState>(initialState);
@@ -75,13 +88,18 @@ export function ContactSection() {
   };
 
   return (
-    <section id="contact" className="section-padding border-t border-ink/10 bg-white/60">
+    <section
+      id="contact"
+      aria-labelledby="contact-heading"
+      className="section-padding border-t border-ink/10 bg-white/60"
+    >
       <div className="section-shell grid gap-12 lg:grid-cols-[0.9fr_1.1fr]">
         <div>
           <SectionHeading
+            id="contact-heading"
             eyebrow="Contact"
-            title="Let&apos;s talk"
-            description="Tell us what you want to build, improve, or automate. We will respond with a technical and strategic perspective."
+            title="Start a technical conversation"
+            description="Share the Shopify, AI, integration, or custom software problem you need to solve. Zuam will respond with a practical technical perspective."
           />
 
           <div className="mt-8 space-y-5">
@@ -93,19 +111,21 @@ export function ContactSection() {
               {CONTACT_EMAIL}
             </a>
 
-            <div className="flex flex-wrap gap-3">
-              {socialLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-full border border-ink/10 bg-white px-4 py-2 text-sm font-semibold text-slateText transition hover:border-violet/40 hover:text-ink focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
+            {socialLinks.length ? (
+              <div className="flex flex-wrap gap-3">
+                {socialLinks.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-full border border-ink/10 bg-white px-4 py-2 text-sm font-semibold text-slateText transition hover:border-violet/40 hover:text-ink focus:outline-none focus:ring-2 focus:ring-violet focus:ring-offset-2"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -138,30 +158,46 @@ export function ContactSection() {
           </div>
 
           <label className="mt-4 block">
-            <span className="text-sm font-semibold text-ink">Company</span>
+            <span className="text-sm font-semibold text-ink">Company / store URL</span>
             <input
               value={form.company}
               onChange={(event) => setForm((current) => ({ ...current, company: event.target.value }))}
               className="mt-2 h-12 w-full rounded-[10px] border border-ink/10 bg-white px-4 text-ink outline-none transition placeholder:text-slateText/50 focus:border-violet focus:ring-4 focus:ring-violet/20"
-              placeholder="Company or project"
+              placeholder="Company, Shopify store, or project"
               autoComplete="organization"
             />
           </label>
 
           <label className="mt-4 block">
-            <span className="text-sm font-semibold text-ink">Message</span>
+            <span className="text-sm font-semibold text-ink">Project type</span>
+            <select
+              value={form.projectType}
+              onChange={(event) => setForm((current) => ({ ...current, projectType: event.target.value }))}
+              className="mt-2 h-12 w-full rounded-[10px] border border-ink/10 bg-white px-4 text-ink outline-none transition focus:border-violet focus:ring-4 focus:ring-violet/20"
+            >
+              <option value="">Select if known</option>
+              {projectTypes.map((projectType) => (
+                <option key={projectType} value={projectType}>
+                  {projectType}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="mt-4 block">
+            <span className="text-sm font-semibold text-ink">What do you need?</span>
             <textarea
               value={form.message}
               onChange={(event) => setForm((current) => ({ ...current, message: event.target.value }))}
               className="mt-2 min-h-36 w-full resize-y rounded-[10px] border border-ink/10 bg-white px-4 py-3 text-ink outline-none transition placeholder:text-slateText/50 focus:border-violet focus:ring-4 focus:ring-violet/20"
-              placeholder="Tell us what you want to build, improve, or automate."
+              placeholder="Tell us about the app, integration, AI workflow, audit, platform work, or custom system you need."
               required
             />
           </label>
 
           <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <button type="submit" className="button-primary">
-              Send message
+              Start a technical conversation
               <Send size={17} aria-hidden="true" />
             </button>
             <p className="min-h-6 text-sm font-medium text-slateText" role="status" aria-live="polite">

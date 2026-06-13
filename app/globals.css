@@ -318,6 +318,7 @@ html.dark .brand-mark-shell {
 }
 
 html.dark input.bg-white,
+html.dark select.bg-white,
 html.dark textarea.bg-white {
   background-color: rgba(23, 42, 56, 0.82);
   caret-color: #D9EAF7;

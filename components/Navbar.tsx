@@ -62,7 +62,7 @@ export function Navbar() {
         <div className="hidden items-center gap-3 lg:flex">
           <ThemeSwitch />
           <a href="#contact" className="button-primary">
-            Let&apos;s talk
+            Discuss a project
             <ArrowUpRight size={17} aria-hidden="true" />
           </a>
         </div>
@@ -102,7 +102,7 @@ export function Navbar() {
             className="button-primary mt-3 w-full"
             onClick={() => setIsOpen(false)}
           >
-            Let&apos;s talk
+            Discuss a project
             <ArrowUpRight size={17} aria-hidden="true" />
           </a>
         </nav>

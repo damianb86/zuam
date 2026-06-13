@@ -1,4 +1,5 @@
 type SectionHeadingProps = {
+  id?: string;
   eyebrow?: string;
   title: string;
   description?: string;
@@ -8,6 +9,7 @@ type SectionHeadingProps = {
 };
 
 export function SectionHeading({
+  id,
   eyebrow,
   title,
   description,
@@ -28,6 +30,7 @@ export function SectionHeading({
     <div className={`flex max-w-3xl flex-col gap-4 ${alignment} ${className}`}>
       {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
       <h2
+        id={id}
         className={`text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl ${titleColor}`}
       >
         {title}

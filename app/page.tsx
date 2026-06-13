@@ -1,6 +1,8 @@
 import { AISection } from "@/components/AISection";
 import { AppsSection } from "@/components/AppsSection";
+import { AudienceSection } from "@/components/AudienceSection";
 import { ContactSection } from "@/components/ContactSection";
+import { EngagementModels } from "@/components/EngagementModels";
 import { EssenceSection } from "@/components/EssenceSection";
 import { ExperienceSection } from "@/components/ExperienceSection";
 import { FinalCta } from "@/components/FinalCta";
@@ -18,14 +20,16 @@ export default function Home() {
       <Navbar />
       <main>
         <Hero />
+        <AudienceSection />
         <EssenceSection />
         <ServicesSection />
         <ShopifySection />
+        <AISection />
+        <EngagementModels />
         <AppsSection />
-        <TechStack />
         <ExperienceSection />
         <ProcessSection />
-        <AISection />
+        <TechStack />
         <FinalCta />
         <ContactSection />
       </main>

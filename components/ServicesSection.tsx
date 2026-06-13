@@ -4,12 +4,13 @@ import { ServiceCard } from "@/components/ServiceCard";
 
 export function ServicesSection() {
   return (
-    <section id="what-we-do" className="section-padding">
+    <section id="what-we-build" aria-labelledby="what-we-build-heading" className="section-padding">
       <div className="section-shell">
         <SectionHeading
-          eyebrow="What we do"
-          title="Senior execution across Shopify, software, performance, and AI."
-          description="We build the pieces that make digital commerce easier to run, easier to measure, and easier to grow."
+          id="what-we-build-heading"
+          eyebrow="What we build"
+          title="Custom software for Shopify, commerce operations and AI-powered workflows."
+          description="Zuam helps businesses design and build the technical layer that standard themes, apps, and tools cannot fully solve."
           align="center"
         />
 

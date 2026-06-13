@@ -9,7 +9,7 @@ export type ZuamApp = {
   useCases: string[];
   url: string;
   icon: string;
-  status: "available-or-in-progress" | "planned" | "private";
+  status: "live" | "planned" | "private";
   notes?: string[];
 };
 
