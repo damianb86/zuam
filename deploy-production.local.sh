@@ -14,15 +14,7 @@ REMOTE_GIT_PULL_COMMAND=${REMOTE_GIT_PULL_COMMAND:-"git pull --ff-only"}
 REMOTE_DEPLOY_COMMAND=${REMOTE_DEPLOY_COMMAND:-"APP_ENV_FILE=.env STATIC_DOCKERFILE=Dockerfile.static-prebuilt SKIP_GIT_PULL=1 ./deploy.sh"}
 SSH_CONNECT_TIMEOUT_SECONDS=${SSH_CONNECT_TIMEOUT_SECONDS:-15}
 
-if [ -z "${PEM_FILE:-}" ]; then
-  if [ -f "$APP_DIR/ssh.pem" ]; then
-    PEM_FILE="$APP_DIR/ssh.pem"
-  elif [ -f "$APP_DIR/../ssh.pem" ]; then
-    PEM_FILE="$APP_DIR/../ssh.pem"
-  else
-    PEM_FILE="$APP_DIR/ssh.pem"
-  fi
-fi
+PEM_FILE=${PEM_FILE:-"$HOME/.ssh/ubuntu-1-2026-06"}
 
 SSH_TARGET="$REMOTE_USER@$REMOTE_HOST"
 SSH_OPTS="-i $PEM_FILE -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=$SSH_CONNECT_TIMEOUT_SECONDS -o ServerAliveInterval=15 -o ServerAliveCountMax=2 -o StrictHostKeyChecking=accept-new"
@@ -138,7 +130,7 @@ require_command rsync
 require_command ssh
 require_command npm
 require_command node
-require_file "$PEM_FILE" "Missing PEM file: $PEM_FILE. Run with PEM_FILE=/path/to/ssh.pem ./deploy-production.local.sh if it lives elsewhere."
+require_file "$PEM_FILE" "Missing SSH key file: $PEM_FILE. Run with PEM_FILE=/path/to/key ./deploy-production.local.sh if it lives elsewhere."
 require_file "$LOCAL_ENV_FILE" "Missing production env file: $LOCAL_ENV_FILE"
 
 for LOCAL_DATA_DIR in $LOCAL_DATA_DIRS; do
