@@ -10,7 +10,11 @@ stack:
 The shared `caddy` container routes the same hostname to both containers:
 
 - `/api/*` -> `api`
-- everything else -> `static`
+- everything else -> `static`, including the compiled La Casita PWA at `/truco/`
+
+La Casita does not add another container. Its Vite export is assembled inside
+Zuam's `out/truco/` directory and is served by the existing Nginx `static`
+container. The Node container remains dedicated to the Zuam API.
 
 No PostgreSQL database is required for the current public landing page. Add a
 database only if the product later needs persistent leads, chat history,
@@ -33,10 +37,19 @@ and webhook settings as fallbacks if another service should receive leads.
 ## Local Static Build
 
 ```sh
-npm run build
+npm run build:with-truco
 ```
 
-The static export is written to `out/`.
+This compiles La Casita from the sibling Truco workspace, refreshes the tracked
+bundle in `static-apps/truco/`, builds Zuam and assembles everything into
+`out/`. The final entry point is `out/truco/index.html`.
+
+The default Truco source path resolves to `~/Documents/Truco` for the current
+repository layout. Override it when necessary:
+
+```sh
+TRUCO_APP_DIR=/absolute/path/to/Truco npm run build:with-truco
+```
 
 ## Local API
 
@@ -74,6 +87,28 @@ nano .env
 Then it pulls the latest GitHub commit, validates `docker-compose.yml`, builds
 both images, starts `static` and `api` on the shared `shared_apps` network, and
 checks the API health endpoint.
+
+## Deploy from this computer
+
+```sh
+./deploy-production.local.sh
+```
+
+This is the complete production flow for Zuam plus La Casita. It builds La
+Casita with the `/truco/` base path, builds Zuam, verifies
+`out/truco/index.html`, uploads the combined `out/` directory over SSH and asks
+the server to rebuild the existing precompiled Nginx container. No separate
+Truco process, port, Caddy route or environment file is required.
+
+The script intentionally stops before deployment when Docker or Nginx files
+have uncommitted changes. The remote checkout updates those files through
+`git pull`; uploading only `out/` is not enough to update the container
+configuration. Commit and push the Zuam changes first, then run the local
+deploy script.
+
+After deployment it checks both `/truco` and `/truco/`. Nginx emits only a
+relative trailing-slash redirect, so its internal port `8080` can never leak
+into the public URL behind Caddy.
 
 ## Server Checklist
 

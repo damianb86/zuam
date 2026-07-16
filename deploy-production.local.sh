@@ -10,9 +10,13 @@ REMOTE_ENV_FILE=${REMOTE_ENV_FILE:-.env}
 LOCAL_ENV_FILE=${LOCAL_ENV_FILE:-}
 LOCAL_DATA_DIRS=${LOCAL_DATA_DIRS:-data}
 BUILD_COMMAND=${BUILD_COMMAND:-"npm run build"}
+TRUCO_APP_DIR=${TRUCO_APP_DIR:-"$APP_DIR/../../../Documents/Truco"}
+TRUCO_BUILD_COMMAND=${TRUCO_BUILD_COMMAND:-"npm run build:static"}
 REMOTE_GIT_PULL_COMMAND=${REMOTE_GIT_PULL_COMMAND:-"git pull --ff-only"}
 REMOTE_DEPLOY_COMMAND=${REMOTE_DEPLOY_COMMAND:-"APP_ENV_FILE=.env STATIC_DOCKERFILE=Dockerfile.static-prebuilt SKIP_GIT_PULL=1 ./deploy.sh"}
 SSH_CONNECT_TIMEOUT_SECONDS=${SSH_CONNECT_TIMEOUT_SECONDS:-15}
+VERIFY_DEPLOY_GIT_STATE=${VERIFY_DEPLOY_GIT_STATE:-1}
+PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-}
 
 PEM_FILE=${PEM_FILE:-"$HOME/.ssh/ubuntu-1-2026-06"}
 
@@ -62,6 +66,40 @@ require_command() {
   COMMAND=$1
   if ! command -v "$COMMAND" >/dev/null 2>&1; then
     printf 'Missing required command: %s\n' "$COMMAND" >&2
+    exit 1
+  fi
+}
+
+get_env_value() {
+  FILE=$1
+  NAME=$2
+
+  grep -E "^[[:space:]]*$NAME=" "$FILE" \
+    | tail -n 1 \
+    | sed 's/^[^=]*=//' \
+    | sed "s/^[\"']//; s/[\"']$//" \
+    || true
+}
+
+verify_local_deploy_git_state() {
+  if [ "$VERIFY_DEPLOY_GIT_STATE" != "1" ]; then
+    return 0
+  fi
+
+  if ! command -v git >/dev/null 2>&1 || [ ! -d "$APP_DIR/.git" ]; then
+    echo "Cannot verify whether the deployment configuration was pushed." >&2
+    echo "Set VERIFY_DEPLOY_GIT_STATE=0 only if you intentionally deploy without Git." >&2
+    exit 1
+  fi
+
+  DIRTY_DEPLOY_FILES=$(git status --porcelain -- \
+    deploy-production.local.sh deploy.sh docker-compose.yml Dockerfile.static Dockerfile.static-prebuilt \
+    docker/static/nginx.conf package.json scripts 2>/dev/null || true)
+
+  if [ -n "$DIRTY_DEPLOY_FILES" ]; then
+    echo "Uncommitted deployment configuration detected:" >&2
+    printf '%s\n' "$DIRTY_DEPLOY_FILES" >&2
+    echo "Commit and push these files before deploying; the server updates its Docker/Nginx configuration with git pull." >&2
     exit 1
   fi
 }
@@ -117,21 +155,26 @@ remote_env_path() {
 cd "$APP_DIR"
 
 if [ -z "$LOCAL_ENV_FILE" ]; then
-  if [ -f "$APP_DIR/.env.production" ]; then
-    LOCAL_ENV_FILE="$APP_DIR/.env.production"
-  elif [ -f "$APP_DIR/.production" ]; then
-    LOCAL_ENV_FILE="$APP_DIR/.production"
-  else
-    LOCAL_ENV_FILE="$APP_DIR/.env"
-  fi
+  LOCAL_ENV_FILE="$APP_DIR/.env.production"
 fi
 
 require_command rsync
 require_command ssh
 require_command npm
 require_command node
+require_command curl
 require_file "$PEM_FILE" "Missing SSH key file: $PEM_FILE. Run with PEM_FILE=/path/to/key ./deploy-production.local.sh if it lives elsewhere."
 require_file "$LOCAL_ENV_FILE" "Missing production env file: $LOCAL_ENV_FILE"
+
+verify_local_deploy_git_state
+LOCAL_DEPLOY_COMMIT=$(git rev-parse HEAD 2>/dev/null || true)
+
+if [ -z "$PUBLIC_BASE_URL" ]; then
+  APP_HOST_VALUE=$(get_env_value "$LOCAL_ENV_FILE" "APP_HOST")
+  if [ -n "$APP_HOST_VALUE" ]; then
+    PUBLIC_BASE_URL="https://$APP_HOST_VALUE"
+  fi
+fi
 
 for LOCAL_DATA_DIR in $LOCAL_DATA_DIRS; do
   require_dir "$APP_DIR/$LOCAL_DATA_DIR" "Missing local data directory: $APP_DIR/$LOCAL_DATA_DIR"
@@ -147,6 +190,8 @@ printf '  local env:   %s\n' "$LOCAL_ENV_FILE"
 printf '  remote env:  %s\n' "$(remote_env_path)"
 printf '  data dirs:   %s\n' "$LOCAL_DATA_DIRS"
 printf '  build cmd:   %s\n' "$BUILD_COMMAND"
+printf '  truco app:   %s\n' "$TRUCO_APP_DIR"
+printf '  truco build: %s\n' "$TRUCO_BUILD_COMMAND"
 printf '  pem:         %s\n' "$PEM_FILE"
 if [ -n "$REMOTE_GIT_PULL_COMMAND" ]; then
   printf '  remote git:  %s\n' "$REMOTE_GIT_PULL_COMMAND"
@@ -154,13 +199,22 @@ else
   printf '  remote git:  disabled\n'
 fi
 printf '  remote run:  %s\n' "$REMOTE_DEPLOY_COMMAND"
+if [ -n "$PUBLIC_BASE_URL" ]; then
+  printf '  public URL:  %s\n' "$PUBLIC_BASE_URL"
+fi
 
-start_step "Building static site locally"
+start_step "Building La Casita for /truco"
+TRUCO_APP_DIR="$TRUCO_APP_DIR" TRUCO_BUILD_COMMAND="$TRUCO_BUILD_COMMAND" sh "$APP_DIR/scripts/build-truco-static.sh"
+finish_step
+
+start_step "Building Zuam static site"
 BUILD_ENV_EXPORTS=$(mktemp)
 write_next_public_exports "$LOCAL_ENV_FILE" "$BUILD_ENV_EXPORTS"
 . "$BUILD_ENV_EXPORTS"
 APP_ENV_FILE="$LOCAL_ENV_FILE" NEXT_TELEMETRY_DISABLED=1 sh -c "$BUILD_COMMAND"
 require_dir "$APP_DIR/out" "Missing static export directory after build: $APP_DIR/out"
+require_file "$APP_DIR/out/truco/index.html" "Missing assembled Truco application: $APP_DIR/out/truco/index.html"
+require_file "$APP_DIR/out/truco/manifest.webmanifest" "Missing Truco PWA manifest: $APP_DIR/out/truco/manifest.webmanifest"
 finish_step
 
 start_step "Checking remote app directory"
@@ -195,6 +249,11 @@ if [ -n "$REMOTE_GIT_PULL_COMMAND" ]; then
   start_step "Updating remote code from Git"
   REMOTE_APP_DIR_QUOTED=$(shell_quote "$REMOTE_APP_DIR")
   ssh $SSH_OPTS "$SSH_TARGET" "cd $REMOTE_APP_DIR_QUOTED && $REMOTE_GIT_PULL_COMMAND"
+  if [ "$VERIFY_DEPLOY_GIT_STATE" = "1" ] && ! ssh $SSH_OPTS "$SSH_TARGET" "cd $REMOTE_APP_DIR_QUOTED && git cat-file -e $(shell_quote "$LOCAL_DEPLOY_COMMIT^{commit}") && git merge-base --is-ancestor $(shell_quote "$LOCAL_DEPLOY_COMMIT") HEAD"; then
+    echo "The server does not contain local deployment commit $LOCAL_DEPLOY_COMMIT." >&2
+    echo "Push the current branch and run the deploy again." >&2
+    exit 1
+  fi
   finish_step
 fi
 
@@ -203,6 +262,7 @@ REMOTE_ENV_PATH=$(remote_env_path)
 REMOTE_ENV_DIR=$(dirname -- "$REMOTE_ENV_PATH")
 ssh $SSH_OPTS "$SSH_TARGET" "mkdir -p $(shell_quote "$REMOTE_ENV_DIR")"
 rsync -az -e "$RSYNC_SSH" "$LOCAL_ENV_FILE" "$SSH_TARGET:$REMOTE_ENV_PATH"
+ssh $SSH_OPTS "$SSH_TARGET" "chmod 600 $(shell_quote "$REMOTE_ENV_PATH")"
 finish_step
 
 for LOCAL_DATA_DIR in $LOCAL_DATA_DIRS; do
@@ -219,5 +279,20 @@ start_step "Running remote deploy"
 REMOTE_APP_DIR_QUOTED=$(shell_quote "$REMOTE_APP_DIR")
 ssh $SSH_OPTS "$SSH_TARGET" "cd $REMOTE_APP_DIR_QUOTED && $REMOTE_DEPLOY_COMMAND"
 finish_step
+
+if [ -n "$PUBLIC_BASE_URL" ]; then
+  start_step "Verifying public Truco route"
+  TRUCO_REDIRECT_URL=$(curl -sS -o /dev/null -w '%{redirect_url}' --max-redirs 0 "$PUBLIC_BASE_URL/truco" || true)
+  case "$TRUCO_REDIRECT_URL" in
+    *:8080/*)
+      echo "Invalid public redirect detected: $TRUCO_REDIRECT_URL" >&2
+      echo "The server is still exposing the internal Nginx port." >&2
+      exit 1
+      ;;
+  esac
+  curl -fsSL "$PUBLIC_BASE_URL/truco/" | grep -q "<title>La Casita — Anotador de Truco</title>"
+  curl -fsSL "$PUBLIC_BASE_URL/truco/manifest.webmanifest" | grep -q '"scope": "/truco/"'
+  finish_step
+fi
 
 printf '\nProduction deploy complete.\n'

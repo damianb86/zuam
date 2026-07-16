@@ -194,6 +194,12 @@ if [ "$STATIC_DOCKERFILE_VALUE" = "Dockerfile.static-prebuilt" ] && [ ! -d "$APP
   exit 1
 fi
 
+if [ "$STATIC_DOCKERFILE_VALUE" = "Dockerfile.static-prebuilt" ] && [ ! -f "$APP_DIR/out/truco/index.html" ]; then
+  echo "Missing compiled Truco application: $APP_DIR/out/truco/index.html" >&2
+  echo "Run deploy-production.local.sh so both static applications are assembled before upload." >&2
+  exit 1
+fi
+
 echo "Deploying $APP_DISPLAY_NAME"
 echo "  app env:    $APP_ENV_FILE"
 echo "  shared env: $SHARED_ENV_FILE"

@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "api:dev": "PORT=${PORT:-3001} node --env-file-if-exists=.env --env-file-if-exists=.env.local services/zuam-api/server.mjs",
-    "build": "next build",
+    "build": "next build && sh scripts/assemble-static-apps.sh",
+    "build:truco": "sh scripts/build-truco-static.sh",
+    "build:with-truco": "npm run build:truco && npm run build",
     "start": "npm run api:dev",
     "lint": "eslint . --max-warnings=0"
   },
