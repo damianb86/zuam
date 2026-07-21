@@ -1,4 +1,4 @@
-const CACHE = "la-casita-v9-truco";
+const CACHE = "la-casita-v10-card-art";
 const BASE = "/truco";
 // Las cartas se guardan al usarse. Evitamos descargar ~60 MB durante la instalación de la PWA.
 const CORE = [`${BASE}/`, `${BASE}/manifest.webmanifest`, `${BASE}/app-icon-192.png`, `${BASE}/app-icon-512.png`, `${BASE}/apple-touch-icon.png`, `${BASE}/favicon-32.png`, `${BASE}/splash-mobile.png`];
