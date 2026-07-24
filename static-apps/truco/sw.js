@@ -1,4 +1,4 @@
-const CACHE = "la-casita-v20-turn-order-voice-fix";
+const CACHE = "la-casita-v25-table-layout-speakers";
 const BASE = "/truco";
 // Las cartas se guardan al usarse. Evitamos descargar ~60 MB durante la instalación de la PWA.
 const CORE = [`${BASE}/`, `${BASE}/manifest.webmanifest`, `${BASE}/app-icon-192.png`, `${BASE}/app-icon-512.png`, `${BASE}/apple-touch-icon.png`, `${BASE}/favicon-32.png`, `${BASE}/splash-mobile.png`];
