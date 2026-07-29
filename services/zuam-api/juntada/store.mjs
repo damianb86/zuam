@@ -94,10 +94,80 @@ async function insertItem(meetupId, item) {
   );
 }
 
-export async function verifyAdmin(meetupId, adminToken) {
+// Quién puede administrar. El organizador siempre (tiene el adminToken del link
+// que se guardó en su celular); además, según el modo de la juntada, cualquier
+// anotado (`all`) o los que el organizador marcó a mano (`chosen`).
+export async function verifyAdmin(meetupId, adminToken, deviceToken) {
+  const meetup = await queryOne(
+    `SELECT admin_token, admin_mode FROM juntada_meetups WHERE id = $1`,
+    [meetupId],
+  );
+  if (!meetup) return false;
+  if (adminToken && adminToken === meetup.admin_token) return true;
+  if (!deviceToken || meetup.admin_mode === "owner") return false;
+
+  const me = await queryOne(
+    `SELECT is_admin, status FROM juntada_participants WHERE meetup_id=$1 AND device_token=$2`,
+    [meetupId, deviceToken],
+  );
+  if (!me || me.status === "out") return false;
+  return meetup.admin_mode === "all" ? true : me.is_admin === true;
+}
+
+// Sólo el organizador cambia quién manda; si no, un invitado con permiso podría
+// darse permisos permanentes o quitárselos al dueño.
+export async function isOwner(meetupId, adminToken) {
   if (!adminToken) return false;
   const row = await queryOne(`SELECT admin_token FROM juntada_meetups WHERE id = $1`, [meetupId]);
   return Boolean(row && row.admin_token === adminToken);
+}
+
+const ADMIN_MODES = ["owner", "chosen", "all"];
+
+export async function setAdminMode(meetupId, mode) {
+  if (!ADMIN_MODES.includes(mode)) return;
+  await query(`UPDATE juntada_meetups SET admin_mode=$2 WHERE id=$1`, [meetupId, mode]);
+}
+
+export async function setParticipantAdmin(meetupId, participantId, on) {
+  await query(
+    `UPDATE juntada_participants SET is_admin=$3 WHERE meetup_id=$1 AND id=$2`,
+    [meetupId, participantId, on === true],
+  );
+}
+
+// Alta manual de varios jugadores por un admin (los que no tienen celular a
+// mano). No llevan device_token, así que nadie los "es" desde su teléfono.
+export async function addParticipants(meetupId, names) {
+  const list = (Array.isArray(names) ? names : [])
+    .map((n) => clean(n, 40))
+    .filter(Boolean)
+    .slice(0, 40);
+  if (!list.length) return { added: 0 };
+
+  const meetup = await queryOne(`SELECT * FROM juntada_meetups WHERE id=$1`, [meetupId]);
+  if (!meetup) return null;
+  const active = await query(
+    `SELECT id FROM juntada_participants WHERE meetup_id=$1 AND status='in'`,
+    [meetupId],
+  );
+
+  let count = active.length;
+  for (const name of list) {
+    const full = meetup.max_players !== null && count >= meetup.max_players;
+    const status = full && meetup.selection_mode === "waitlist" ? "wait" : "in";
+    await query(
+      `INSERT INTO juntada_participants (id, meetup_id, device_token, name, status) VALUES ($1,$2,'',$3,$4)`,
+      [shortId(10), meetupId, name, status],
+    );
+    if (status === "in") count += 1;
+  }
+  return { added: list.length };
+}
+
+export async function deleteMeetup(meetupId) {
+  // Ítems, participantes, equipos, mesas y eventos caen por ON DELETE CASCADE.
+  await query(`DELETE FROM juntada_meetups WHERE id = $1`, [meetupId]);
 }
 
 // ── Ítems ─────────────────────────────────────────────────────────────────────
@@ -284,38 +354,6 @@ export async function deleteTable(tableId) {
   await query(`DELETE FROM juntada_tables WHERE id = $1`, [tableId]);
 }
 
-// Sincroniza la partida del contador de fósforos con control de versión.
-export async function syncTableMatch(tableId, { match, baseVersion }) {
-  const table = await queryOne(`SELECT * FROM juntada_tables WHERE id = $1`, [tableId]);
-  if (!table) return null;
-  if (table.version !== baseVersion) {
-    return { ok: false, version: table.version, conflict: true, match: table.match_json ?? undefined };
-  }
-
-  const blue = clampInt(match?.score?.blue, 0, 999, 0);
-  const red = clampInt(match?.score?.red, 0, 999, 0);
-  const finished = match?.status === "completed";
-  const winner = finished ? (blue >= red ? "blue" : "red") : null;
-  const status = finished ? "finished" : "playing";
-  const version = table.version + 1;
-
-  await query(
-    `UPDATE juntada_tables
-        SET match_json=$2::jsonb, score_blue=$3, score_red=$4, winner=$5, status=$6,
-            version=$7, target=$8, updated_at=now()
-      WHERE id=$1`,
-    [tableId, JSON.stringify(match), blue, red, winner, status, version,
-      clampInt(match?.config?.targetScore, 5, 99, table.target)],
-  );
-
-  if (status === "finished" && table.status !== "finished") {
-    await addEvent(table.meetup_id, "table_finished", {
-      tableId, name: table.name, winner, scoreBlue: blue, scoreRed: red,
-    });
-  }
-  return { ok: true, version };
-}
-
 async function addEvent(meetupId, type, data) {
   await query(
     `INSERT INTO juntada_events (meetup_id, type, data_json) VALUES ($1,$2,$3::jsonb)`,
@@ -433,13 +471,20 @@ export async function getState(meetupId, deviceToken, adminToken) {
     query(`SELECT * FROM juntada_events WHERE meetup_id=$1 ORDER BY id DESC LIMIT 20`, [meetupId]),
   ]);
 
-  const meId = deviceToken ? people.find((p) => p.device_token === deviceToken)?.id : undefined;
+  // Los agregados a mano tienen device_token vacío: no son "yo" de nadie.
+  const me = deviceToken ? people.find((p) => p.device_token && p.device_token === deviceToken) : undefined;
+  const meId = me?.id;
+  const isOwnerHere = Boolean(adminToken && adminToken === meetup.admin_token);
+  const isAdmin = isOwnerHere
+    || (Boolean(me) && me.status !== "out"
+      && (meetup.admin_mode === "all" || (meetup.admin_mode === "chosen" && me.is_admin === true)));
 
   return {
     meetup: {
       id: meetup.id, title: meetup.title, date: meetup.date, time: meetup.time,
       durationMin: meetup.duration_min, place: meetup.place, notes: meetup.notes,
       maxPlayers: meetup.max_players, selectionMode: meetup.selection_mode,
+      adminMode: meetup.admin_mode ?? "owner",
       createdAt: meetup.created_at,
     },
     items: items.map((it) => ({
@@ -447,14 +492,18 @@ export async function getState(meetupId, deviceToken, adminToken) {
       detailMode: it.detail_mode, detailOptions: Array.isArray(it.detail_options) ? it.detail_options : [],
       claims: claims.filter((c) => c.item_id === it.id).map((c) => ({ participantId: c.participant_id, detail: c.detail })),
     })),
-    participants: people.map((p) => ({ id: p.id, name: p.name, status: p.status, isMe: p.id === meId })),
+    participants: people.map((p) => ({
+      id: p.id, name: p.name, status: p.status,
+      isMe: p.id === meId, isAdmin: p.is_admin === true, guest: !p.device_token,
+    })),
     teams: teams.map((t) => ({
       id: t.id, name: t.name, color: t.color,
       memberIds: members.filter((m) => m.team_id === t.id).map((m) => m.participant_id),
     })),
     tables: tables.map(toTableDTO),
     events: events.map((e) => ({ id: Number(e.id), type: e.type, data: e.data_json ?? {}, createdAt: e.created_at })),
-    isAdmin: Boolean(adminToken && adminToken === meetup.admin_token),
+    isAdmin,
+    isOwner: isOwnerHere,
   };
 }
 
@@ -463,7 +512,7 @@ const toTableDTO = (t) => ({
   blueTeamId: t.blue_team_id, redTeamId: t.red_team_id,
   target: t.target, scoreBlue: t.score_blue, scoreRed: t.score_red,
   status: t.status, winner: t.winner, version: t.version,
-  round: t.round, bracket: t.bracket, match: t.match_json ?? null,
+  round: t.round, bracket: t.bracket,
 });
 
 // Estado de UNA mesa: lo que necesita el contador de fósforos.
@@ -494,8 +543,66 @@ export async function getTableState(tableId) {
     name: t.name, format: t.format, target: t.target, round: t.round, bracket: t.bracket,
     status: t.status, winner: t.winner, version: t.version,
     blue: teamInfo(t.blue_team_id), red: teamInfo(t.red_team_id),
-    match: t.match_json ?? null,
   };
+}
+
+// Latido para el contador de fósforos: lo MÍNIMO para saber qué pasa en las
+// otras mesas (avisos de "terminó una mesa" y de ronda nueva). Se pide cada 15s
+// desde cada mesa abierta, así que no trae ni la partida ni la configuración.
+export async function getTablesPulse(meetupId) {
+  const [tables, teams] = await Promise.all([
+    query(
+      `SELECT id, name, blue_team_id, red_team_id, score_blue, score_red, status, winner, round
+         FROM juntada_tables WHERE meetup_id=$1 ORDER BY created_at`,
+      [meetupId],
+    ),
+    query(`SELECT id, name FROM juntada_teams WHERE meetup_id=$1`, [meetupId]),
+  ]);
+  if (!tables.length) return { round: 1, tables: [] };
+
+  const nameOf = (id) => teams.find((t) => t.id === id)?.name ?? "";
+  const round = Math.max(...tables.map((t) => t.round));
+  return {
+    round,
+    // Sólo la ronda actual: las anteriores ya no le sirven al contador.
+    tables: tables.filter((t) => t.round === round).map((t) => ({
+      id: t.id, name: t.name,
+      blue: nameOf(t.blue_team_id), red: nameOf(t.red_team_id),
+      blueTeamId: t.blue_team_id, redTeamId: t.red_team_id,
+      scoreBlue: t.score_blue, scoreRed: t.score_red,
+      status: t.status, winner: t.winner,
+    })),
+  };
+}
+
+// Sube el resultado de una mesa. Se llama sólo al aplicar una mano, así que
+// viaja el puntaje y nada más: la partida vive en el celular que anota.
+export async function pushTableScore(tableId, { scoreBlue, scoreRed, done }) {
+  const table = await queryOne(
+    `SELECT id, meetup_id, name, status, target FROM juntada_tables WHERE id = $1`,
+    [tableId],
+  );
+  if (!table) return null;
+
+  const blue = clampInt(scoreBlue, 0, 999, 0);
+  const red = clampInt(scoreRed, 0, 999, 0);
+  const finished = done === true;
+  const winner = finished ? (blue >= red ? "blue" : "red") : null;
+  const status = finished ? "finished" : "playing";
+
+  await query(
+    `UPDATE juntada_tables
+        SET score_blue=$2, score_red=$3, winner=$4, status=$5, version=version+1, updated_at=now()
+      WHERE id=$1`,
+    [tableId, blue, red, winner, status],
+  );
+
+  if (finished && table.status !== "finished") {
+    await addEvent(table.meetup_id, "table_finished", {
+      tableId, name: table.name, winner, scoreBlue: blue, scoreRed: red,
+    });
+  }
+  return { ok: true };
 }
 
 // Datos mínimos para la preview de WhatsApp.

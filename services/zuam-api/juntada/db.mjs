@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS juntada_meetups (
   notes          TEXT NOT NULL DEFAULT '',
   max_players    INTEGER,
   selection_mode TEXT NOT NULL DEFAULT 'waitlist',
+  admin_mode     TEXT NOT NULL DEFAULT 'owner',
   admin_token    TEXT NOT NULL,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -82,6 +83,7 @@ CREATE TABLE IF NOT EXISTS juntada_participants (
   device_token TEXT NOT NULL,
   name         TEXT NOT NULL,
   status       TEXT NOT NULL DEFAULT 'in',
+  is_admin     BOOLEAN NOT NULL DEFAULT false,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS juntada_participants_meetup ON juntada_participants(meetup_id);
@@ -141,6 +143,11 @@ CREATE TABLE IF NOT EXISTS juntada_events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS juntada_events_meetup ON juntada_events(meetup_id, id);
+
+-- Columnas agregadas después de la primera versión. Van aparte de los CREATE
+-- porque las bases que ya existen no se recrean.
+ALTER TABLE juntada_meetups     ADD COLUMN IF NOT EXISTS admin_mode TEXT NOT NULL DEFAULT 'owner';
+ALTER TABLE juntada_participants ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false;
 `;
 
 // Crea el esquema una sola vez por proceso.

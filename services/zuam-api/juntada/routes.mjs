@@ -5,9 +5,10 @@
 // hacen las rutas de chat y contacto.
 
 import {
-  addItem, assignItemsRandomly, autoFormTeams, createMeetup, createTable, deleteItem,
-  deleteTable, generateTournamentRound, getState, getTableState, joinMeetup, setTeams,
-  syncTableMatch, toggleClaim, updateItem, updateTable, verifyAdmin,
+  addItem, addParticipants, assignItemsRandomly, autoFormTeams, createMeetup, createTable,
+  deleteItem, deleteMeetup, deleteTable, generateTournamentRound, getState, getTablesPulse,
+  getTableState, isOwner, joinMeetup, pushTableScore, setAdminMode, setParticipantAdmin,
+  setTeams, toggleClaim, updateItem, updateTable, verifyAdmin,
 } from "./store.mjs";
 
 // Devuelve los segmentos de la ruta si es de juntadas, o null si no lo es.
@@ -43,6 +44,41 @@ export async function handleJuntada({ method, segments, searchParams, send, read
     return state ? send(200, state) : notFound(send);
   }
 
+  // GET /juntada/:id/pulse → latido chico para el contador (cada 15s)
+  if (section === "pulse" && method === "GET") {
+    return send(200, await getTablesPulse(meetupId));
+  }
+
+  // DELETE /juntada/:id → borrar la juntada entera (admin)
+  if (!section && method === "DELETE") {
+    if (!(await verifyAdmin(meetupId, searchParams.get("admin"), searchParams.get("device")))) {
+      return forbidden(send);
+    }
+    await deleteMeetup(meetupId);
+    return send(200, { ok: true });
+  }
+
+  // POST /juntada/:id/participants → alta manual de uno o varios (admin)
+  if (section === "participants" && method === "POST") {
+    const body = (await readBody()) || {};
+    if (!(await verifyAdmin(meetupId, body.admin, body.device))) return forbidden(send);
+    const result = await addParticipants(meetupId, body.names ?? [body.name]);
+    if (!result) return notFound(send);
+    if (!result.added) return send(400, { error: "Escribí al menos un nombre." });
+    return send(201, result);
+  }
+
+  // POST /juntada/:id/admins → modo de administración y quiénes mandan (dueño)
+  if (section === "admins" && method === "POST") {
+    const body = (await readBody()) || {};
+    if (!(await isOwner(meetupId, body.admin))) {
+      return send(403, { error: "Sólo quien creó la juntada puede cambiar los permisos." });
+    }
+    if (typeof body.mode === "string") await setAdminMode(meetupId, body.mode);
+    if (body.participantId) await setParticipantAdmin(meetupId, body.participantId, body.on !== false);
+    return send(200, { ok: true });
+  }
+
   // POST /juntada/:id/join
   if (section === "join" && method === "POST") {
     const body = (await readBody()) || {};
@@ -64,14 +100,14 @@ export async function handleJuntada({ method, segments, searchParams, send, read
   // Ítems (organizador): POST agregar · PATCH editar · DELETE quitar
   if (section === "item") {
     if (method === "DELETE") {
-      if (!(await verifyAdmin(meetupId, searchParams.get("admin")))) return forbidden(send);
+      if (!(await verifyAdmin(meetupId, searchParams.get("admin"), searchParams.get("device")))) return forbidden(send);
       const itemId = searchParams.get("itemId");
       if (!itemId) return send(400, { error: "Falta el ítem." });
       await deleteItem(itemId);
       return send(200, { ok: true });
     }
     const body = (await readBody()) || {};
-    if (!(await verifyAdmin(meetupId, body.admin))) return forbidden(send);
+    if (!(await verifyAdmin(meetupId, body.admin, body.device))) return forbidden(send);
     if (method === "POST") {
       if (!String(body.label || "").trim()) return send(400, { error: "Falta el ítem." });
       await addItem(meetupId, body);
@@ -88,7 +124,7 @@ export async function handleJuntada({ method, segments, searchParams, send, read
   // POST /juntada/:id/assign-items
   if (section === "assign-items" && method === "POST") {
     const body = (await readBody()) || {};
-    if (!(await verifyAdmin(meetupId, body.admin))) return forbidden(send);
+    if (!(await verifyAdmin(meetupId, body.admin, body.device))) return forbidden(send);
     await assignItemsRandomly(meetupId);
     return send(200, { ok: true });
   }
@@ -96,7 +132,7 @@ export async function handleJuntada({ method, segments, searchParams, send, read
   // POST /juntada/:id/teams
   if (section === "teams" && method === "POST") {
     const body = (await readBody()) || {};
-    if (!(await verifyAdmin(meetupId, body.admin))) return forbidden(send);
+    if (!(await verifyAdmin(meetupId, body.admin, body.device))) return forbidden(send);
     if (body.mode === "set" && Array.isArray(body.teams)) await setTeams(meetupId, body.teams);
     else await autoFormTeams(meetupId, Math.max(1, Math.min(6, Math.round(body.teamSize || 2))));
     return send(200, { ok: true });
@@ -105,7 +141,7 @@ export async function handleJuntada({ method, segments, searchParams, send, read
   // POST /juntada/:id/tournament
   if (section === "tournament" && method === "POST") {
     const body = (await readBody()) || {};
-    if (!(await verifyAdmin(meetupId, body.admin))) return forbidden(send);
+    if (!(await verifyAdmin(meetupId, body.admin, body.device))) return forbidden(send);
     const result = await generateTournamentRound(meetupId, body.mode ?? "winners-losers", body.pairs ?? []);
     return result.ok ? send(200, result) : send(400, { error: result.error });
   }
@@ -115,40 +151,41 @@ export async function handleJuntada({ method, segments, searchParams, send, read
     // POST /juntada/:id/table → crear (organizador)
     if (!param && method === "POST") {
       const body = (await readBody()) || {};
-      if (!(await verifyAdmin(meetupId, body.admin))) return forbidden(send);
+      if (!(await verifyAdmin(meetupId, body.admin, body.device))) return forbidden(send);
       await createTable(meetupId, body);
       return send(201, { ok: true });
     }
     if (!param) return send(405, { error: "Método no permitido." });
-    void sub;
 
-    // GET /juntada/:id/table/:tableId → estado de la mesa (contador)
+    // GET /juntada/:id/table/:tableId → datos de la mesa (se pide una sola vez,
+    // al abrir el contador: equipos, jugadores y a cuánto se juega)
     if (method === "GET") {
       const state = await getTableState(param);
       return state ? send(200, state) : send(404, { error: "Mesa no encontrada." });
     }
 
-    // POST → sincronizar la partida (cualquiera de la mesa)
-    if (method === "POST") {
+    // POST /juntada/:id/table/:tableId/score → subir el resultado.
+    // Lo manda el contador al aplicar una mano: sólo los puntos.
+    if (method === "POST" && sub === "score") {
       const body = (await readBody()) || {};
-      if (!body.match || typeof body.baseVersion !== "number") {
+      if (typeof body.scoreBlue !== "number" || typeof body.scoreRed !== "number") {
         return send(400, { error: "Datos incompletos." });
       }
-      const result = await syncTableMatch(param, { match: body.match, baseVersion: body.baseVersion });
+      const result = await pushTableScore(param, body);
       return result ? send(200, result) : send(404, { error: "Mesa no encontrada." });
     }
 
     // PATCH → asignar equipos / renombrar (organizador)
     if (method === "PATCH") {
       const body = (await readBody()) || {};
-      if (!(await verifyAdmin(meetupId, body.admin))) return forbidden(send);
+      if (!(await verifyAdmin(meetupId, body.admin, body.device))) return forbidden(send);
       await updateTable(param, body);
       return send(200, { ok: true });
     }
 
     // DELETE → borrar la mesa (organizador)
     if (method === "DELETE") {
-      if (!(await verifyAdmin(meetupId, searchParams.get("admin")))) return forbidden(send);
+      if (!(await verifyAdmin(meetupId, searchParams.get("admin"), searchParams.get("device")))) return forbidden(send);
       await deleteTable(param);
       return send(200, { ok: true });
     }
