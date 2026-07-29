@@ -236,6 +236,16 @@ export async function leaveMeetup(meetupId, deviceToken) {
   return true;
 }
 
+// Un admin saca a alguien más (avisó que no va, o el organizador limpia la
+// lista). Igual que `leaveMeetup`: queda en 'out', no se borra, conserva lo
+// que ya había elegido en "qué llevar" por si vuelve a anotarse.
+export async function removeParticipant(meetupId, participantId) {
+  await query(
+    `UPDATE juntada_participants SET status='out' WHERE meetup_id=$1 AND id=$2`,
+    [meetupId, participantId],
+  );
+}
+
 // ── Reclamar / soltar un ítem (con su detalle) ────────────────────────────────
 export async function toggleClaim(meetupId, deviceToken, itemId, on, detail = "") {
   const me = await queryOne(

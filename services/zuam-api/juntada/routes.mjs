@@ -7,8 +7,8 @@
 import {
   addItem, addParticipants, assignItemsRandomly, autoFormTeams, createMeetup, createTable,
   deleteItem, deleteMeetup, deleteTable, generateTournamentRound, getState, getTablesPulse,
-  getTableState, isOwner, joinMeetup, leaveMeetup, pushTableScore, setAdminMode, setParticipantAdmin,
-  setTeams, toggleClaim, updateItem, updateTable, verifyAdmin,
+  getTableState, isOwner, joinMeetup, leaveMeetup, pushTableScore, removeParticipant, setAdminMode,
+  setParticipantAdmin, setTeams, toggleClaim, updateItem, updateTable, verifyAdmin,
 } from "./store.mjs";
 
 // Devuelve los segmentos de la ruta si es de juntadas, o null si no lo es.
@@ -59,13 +59,23 @@ export async function handleJuntada({ method, segments, searchParams, send, read
   }
 
   // POST /juntada/:id/participants → alta manual de uno o varios (admin)
-  if (section === "participants" && method === "POST") {
+  if (section === "participants" && !param && method === "POST") {
     const body = (await readBody()) || {};
     if (!(await verifyAdmin(meetupId, body.admin, body.device))) return forbidden(send);
     const result = await addParticipants(meetupId, body.names ?? [body.name]);
     if (!result) return notFound(send);
     if (!result.added) return send(400, { error: "Escribí al menos un nombre." });
     return send(201, result);
+  }
+
+  // DELETE /juntada/:id/participants/:participantId → un admin saca a alguien
+  // de la lista (avisa que no va, igual que si esa persona lo hiciera sola).
+  if (section === "participants" && param && method === "DELETE") {
+    if (!(await verifyAdmin(meetupId, searchParams.get("admin"), searchParams.get("device")))) {
+      return forbidden(send);
+    }
+    await removeParticipant(meetupId, param);
+    return send(200, { ok: true });
   }
 
   // POST /juntada/:id/admins → modo de administración y quiénes mandan (dueño)
