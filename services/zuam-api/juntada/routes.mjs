@@ -7,7 +7,7 @@
 import {
   addItem, addParticipants, assignItemsRandomly, autoFormTeams, createMeetup, createTable,
   deleteItem, deleteMeetup, deleteTable, generateTournamentRound, getState, getTablesPulse,
-  getTableState, isOwner, joinMeetup, pushTableScore, setAdminMode, setParticipantAdmin,
+  getTableState, isOwner, joinMeetup, leaveMeetup, pushTableScore, setAdminMode, setParticipantAdmin,
   setTeams, toggleClaim, updateItem, updateTable, verifyAdmin,
 } from "./store.mjs";
 
@@ -87,6 +87,14 @@ export async function handleJuntada({ method, segments, searchParams, send, read
     }
     const result = await joinMeetup(meetupId, body.device, body.name);
     return result ? send(200, result) : notFound(send);
+  }
+
+  // POST /juntada/:id/leave → darse de baja uno mismo (avisar que no va)
+  if (section === "leave" && method === "POST") {
+    const body = (await readBody()) || {};
+    if (!body.device) return send(400, { error: "Falta el dispositivo." });
+    const ok = await leaveMeetup(meetupId, body.device);
+    return ok ? send(200, { ok: true }) : notFound(send);
   }
 
   // POST /juntada/:id/claim

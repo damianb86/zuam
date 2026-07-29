@@ -223,6 +223,19 @@ export async function joinMeetup(meetupId, deviceToken, name) {
   return { participantId: id, status };
 }
 
+// Darse de baja uno mismo (no un admin echando a otro). Deja el registro en
+// 'out' en vez de borrarlo: conserva lo que ya había tomado en "qué llevar" y
+// si vuelve a anotarse, `joinMeetup` lo revive con ese mismo historial.
+export async function leaveMeetup(meetupId, deviceToken) {
+  const me = await queryOne(
+    `SELECT id FROM juntada_participants WHERE meetup_id=$1 AND device_token=$2`,
+    [meetupId, deviceToken],
+  );
+  if (!me) return false;
+  await query(`UPDATE juntada_participants SET status='out' WHERE id=$1`, [me.id]);
+  return true;
+}
+
 // ── Reclamar / soltar un ítem (con su detalle) ────────────────────────────────
 export async function toggleClaim(meetupId, deviceToken, itemId, on, detail = "") {
   const me = await queryOne(
