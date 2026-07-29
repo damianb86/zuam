@@ -24,8 +24,9 @@ services:
       observability.service: static
       caddy: ${APP_HOST:?Set APP_HOST in the app .env}
       caddy.encode: zstd gzip
-      caddy.1_handle: /*
-      caddy.1_handle.0_reverse_proxy: "{{upstreams 8080}}"
+      # Catch-all: se evalúa último, después de /api/* y /j/* (servicio api).
+      caddy.9_handle: /*
+      caddy.9_handle.0_reverse_proxy: "{{upstreams 8080}}"
       caddy_ingress_network: ${SHARED_DOCKER_NETWORK:-shared_apps}
     logging:
       driver: json-file
@@ -77,6 +78,9 @@ services:
       EMAIL_FROM: ${EMAIL_FROM:-}
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-Zuam Website}
       EMAIL_TIMEOUT_MS: ${EMAIL_TIMEOUT_MS:-15000}
+      JUNTADA_DATABASE_URL: ${JUNTADA_DATABASE_URL:-}
+      JUNTADA_DB_POOL_MAX: ${JUNTADA_DB_POOL_MAX:-4}
+      TRUCO_INDEX_PATH: ${TRUCO_INDEX_PATH:-./static-apps/truco/index.html}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
       CHAT_RATE_LIMIT_PER_MINUTE: ${CHAT_RATE_LIMIT_PER_MINUTE:-12}
       CHAT_SESSION_RATE_LIMIT_PER_MINUTE: ${CHAT_SESSION_RATE_LIMIT_PER_MINUTE:-6}
@@ -94,6 +98,10 @@ services:
       caddy: ${APP_HOST:?Set APP_HOST in the app .env}
       caddy.0_handle_path: /api/*
       caddy.0_handle_path.0_reverse_proxy: "{{upstreams 3000}}"
+      # Las páginas de juntada las sirve la API (necesitan Open Graph dinámico
+      # para la preview de WhatsApp, y el landing se exporta estático).
+      caddy.1_handle: /j/*
+      caddy.1_handle.0_reverse_proxy: "{{upstreams 3000}}"
       caddy_ingress_network: ${SHARED_DOCKER_NETWORK:-shared_apps}
     logging:
       driver: json-file

@@ -1,6 +1,9 @@
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import nodemailer from "nodemailer";
+import { handleJuntada, juntadaSegments } from "./juntada/routes.mjs";
+import { juntadaPageId, renderJuntadaPage } from "./juntada/page.mjs";
+import { juntadaEnabled } from "./juntada/db.mjs";
 
 const contentUrl = new URL("../../data/zuamContent.json", import.meta.url);
 const zuamContent = JSON.parse(await readFile(contentUrl, "utf8"));
@@ -2000,6 +2003,23 @@ const server = createServer(async (request, response) => {
       return sendJson(request, response, 200, { ok: true });
     }
 
+    // Página pública de una juntada. Es una navegación del navegador (la
+    // comparten por WhatsApp), así que va antes de los controles de origen.
+    const pageMeetupId = request.method === "GET" ? juntadaPageId(path) : null;
+    if (pageMeetupId) {
+      const forwardedProto = request.headers["x-forwarded-proto"];
+      const proto = (Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto)
+        || (url.hostname === "localhost" ? "http" : "https");
+      const host = request.headers["x-forwarded-host"] || request.headers.host || url.host;
+      const html = await renderJuntadaPage(pageMeetupId, `${proto}://${host}`);
+      response.writeHead(200, {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store"
+      });
+      response.end(html);
+      return;
+    }
+
     if (!isAllowedOrigin(request)) {
       return sendJson(request, response, 403, {
         error: "Requests must come from an allowed origin."
@@ -2018,6 +2038,23 @@ const server = createServer(async (request, response) => {
 
     if (request.method === "POST" && (path === "/contact" || path === "/api/contact")) {
       return await handleContact(request, response);
+    }
+
+    // Juntadas de truco.
+    const segments = juntadaSegments(path);
+    if (segments) {
+      if (!juntadaEnabled()) {
+        return sendJson(request, response, 503, {
+          error: "Las juntadas no están configuradas en este servidor."
+        });
+      }
+      return await handleJuntada({
+        method: request.method,
+        segments,
+        searchParams: url.searchParams,
+        send: (status, body) => sendJson(request, response, status, body),
+        readBody: () => readJsonBody(request)
+      });
     }
 
     return sendJson(request, response, 404, { error: "Not found." });

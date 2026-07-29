@@ -10,6 +10,9 @@ RUN npm ci --omit=dev
 
 COPY services/zuam-api ./services/zuam-api
 COPY data/zuamContent.json ./data/zuamContent.json
+# Sólo el index.html del bundle de La Casita: de ahí se toman las etiquetas de
+# los assets (llevan hash) para las páginas de juntada.
+COPY static-apps/truco/index.html ./static-apps/truco/index.html
 
 EXPOSE 3000
 
