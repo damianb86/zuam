@@ -44,6 +44,7 @@ import { runAgent, runAmbient } from "./agent.mjs";
 import { shouldConsiderSpeaking } from "./ambient.mjs";
 import { buildTools } from "./tools.mjs";
 import { startAdminServer } from "./admin.mjs";
+import { startAnnouncer } from "./announcer.mjs";
 
 const log = (event, data = {}) =>
   console.log(JSON.stringify({ at: new Date().toISOString(), event, ...data }));
@@ -116,6 +117,7 @@ let reconnecting = false;
 let currentSock = null;
 // El servidor de la interfaz se levanta una sola vez, no en cada reconexion.
 let adminServer = null;
+let announcer = null;
 // Estado de la conexion, para mostrarlo (y mostrar el QR) en la interfaz.
 const status = { connected: false, qr: null };
 
@@ -282,6 +284,18 @@ async function start() {
       relink: relinkNumber,
       log,
     });
+  }
+
+  // Avisos automaticos: resultados de partidos y rondas nuevas. Se prende una
+  // sola vez; usa `currentSock`, asi que sobrevive a las reconexiones.
+  if (!announcer) {
+    announcer = startAnnouncer(
+      async (chatId, text) => {
+        if (!currentSock || !status.connected) return;
+        await currentSock.sendMessage(chatId, { text });
+      },
+      log,
+    );
   }
 
   sock.ev.on("messages.upsert", async ({ messages, type }) => {

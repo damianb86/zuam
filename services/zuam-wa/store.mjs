@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS wa_chats (
 -- Allowlist explicita. Sin esto en true, el bot ni mira el chat.
 ALTER TABLE wa_chats ADD COLUMN IF NOT EXISTS allowed BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE wa_chats ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ;
+-- Hasta que evento de la juntada se aviso ya en el grupo (ver announcer.mjs).
+ALTER TABLE wa_chats ADD COLUMN IF NOT EXISTS last_event_id BIGINT NOT NULL DEFAULT 0;
 
 -- Ventana de escucha. Si no hay fila, el bot esta callado y no lee nada.
 CREATE TABLE IF NOT EXISTS wa_sessions (
@@ -206,17 +208,49 @@ export async function ensureChat(chatId, title = "") {
 // permite al bot hacer cosas de organizador mas adelante.
 export async function bindMeetup(chatId, meetupId, adminToken = "") {
   await ensureChat(chatId);
-  await wq(`UPDATE wa_chats SET active_meetup_id=$2, admin_token=$3 WHERE chat_id=$1`, [
-    chatId,
-    meetupId,
-    adminToken,
-  ]);
+  // La linea de base de los avisos se fija ACA, con el ultimo evento que ya
+  // tiene la juntada. Asi una juntada nueva (sin eventos) arranca en 0 y avisa
+  // todo lo que pase; y si se ata una que ya venia jugada, no vomita el
+  // historial. Hacerlo en el barrido no alcanzaba: si la juntada todavia no
+  // tenia ningun evento, la base nunca quedaba fijada y el primer resultado se
+  // perdia.
+  const base = meetupId
+    ? await wq1(`SELECT COALESCE(MAX(id), 0) AS id FROM juntada_events WHERE meetup_id=$1`, [meetupId])
+    : null;
+  await wq(
+    `UPDATE wa_chats SET active_meetup_id=$2, admin_token=$3, last_event_id=$4 WHERE chat_id=$1`,
+    [chatId, meetupId, adminToken, Number(base?.id ?? 0)],
+  );
 }
 
 export async function getActiveMeetup(chatId) {
   const chat = await getChat(chatId);
   if (!chat?.active_meetup_id) return null;
   return { meetupId: chat.active_meetup_id, adminToken: chat.admin_token || "" };
+}
+
+// ── Avisos automaticos ──────────────────────────────────────────────────────
+
+// Chats con una juntada atada: son los unicos donde hay algo que anunciar.
+export async function chatsWithMeetup() {
+  const rows = await wq(
+    `SELECT chat_id, active_meetup_id, admin_token FROM wa_chats
+      WHERE allowed = true AND active_meetup_id IS NOT NULL`,
+  );
+  return rows.map((r) => ({
+    chatId: r.chat_id,
+    meetupId: r.active_meetup_id,
+    adminToken: r.admin_token || "",
+  }));
+}
+
+export async function getLastEventId(chatId) {
+  const row = await wq1(`SELECT last_event_id FROM wa_chats WHERE chat_id=$1`, [chatId]);
+  return Number(row?.last_event_id ?? 0);
+}
+
+export async function setLastEventId(chatId, eventId) {
+  await wq(`UPDATE wa_chats SET last_event_id=$2 WHERE chat_id=$1`, [chatId, Number(eventId) || 0]);
 }
 
 // ── Identidades ─────────────────────────────────────────────────────────────

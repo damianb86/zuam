@@ -100,6 +100,10 @@ export const config = {
   // Enfriamiento desde el ultimo mensaje del bot.
   ambientCooldownMs: int("WA_AMBIENT_COOLDOWN_MINUTES", 10) * 60 * 1000,
 
+  // ── Avisos automaticos (resultados de partidos, rondas nuevas) ───────────
+  announce: bool("WA_ANNOUNCE", true),
+  announceIntervalMs: int("WA_ANNOUNCE_SECONDS", 30) * 1000,
+
   // ── Comportamiento proactivo (Fase 4) ────────────────────────────────────
   // Reaccionar con 👍 en vez de escribir cuando la intencion es clara.
   silentReactions: bool("WA_SILENT_REACTIONS", true),

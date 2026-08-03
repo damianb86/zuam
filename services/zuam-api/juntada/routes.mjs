@@ -8,7 +8,7 @@ import {
   addItem, addParticipants, assignItemsRandomly, autoFormTeams, createMeetup, createTable,
   deleteItem, deleteMeetup, deleteTable, generateTournamentRound, getState, getTablesPulse,
   getTableState, isOwner, joinMeetup, leaveMeetup, pushTableScore, removeParticipant, setAdminMode,
-  setParticipantAdmin, setTeams, toggleClaim, updateItem, updateTable, verifyAdmin,
+  setParticipantAdmin, setTeams, toggleClaim, updateItem, updateMeetup, updateTable, verifyAdmin,
 } from "./store.mjs";
 
 // Devuelve los segmentos de la ruta si es de juntadas, o null si no lo es.
@@ -47,6 +47,14 @@ export async function handleJuntada({ method, segments, searchParams, send, read
   // GET /juntada/:id/pulse → latido chico para el contador (cada 15s)
   if (section === "pulse" && method === "GET") {
     return send(200, await getTablesPulse(meetupId));
+  }
+
+  // PATCH /juntada/:id → editar titulo, fecha, hora, lugar… (admin)
+  if (!section && method === "PATCH") {
+    const body = (await readBody()) || {};
+    if (!(await verifyAdmin(meetupId, body.admin, body.device))) return forbidden(send);
+    const result = await updateMeetup(meetupId, body);
+    return result ? send(200, result) : notFound(send);
   }
 
   // DELETE /juntada/:id → borrar la juntada entera (admin)

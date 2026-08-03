@@ -30,6 +30,8 @@ services:
       WA_MEETUP_BASE_URL: ${WA_MEETUP_BASE_URL:-https://zuam.com}
       WA_SILENT_REACTIONS: ${WA_SILENT_REACTIONS:-true}
       WA_RETENTION_DAYS: ${WA_RETENTION_DAYS:-7}
+      WA_ANNOUNCE: ${WA_ANNOUNCE:-true}
+      WA_ANNOUNCE_SECONDS: ${WA_ANNOUNCE_SECONDS:-30}
       WA_TRIGGERS: ${WA_TRIGGERS:-@truco,@bot,@juntada}
       WA_DISMISSALS: ${WA_DISMISSALS:-listo,gracias,chau,ya esta,nada mas}
       WA_SESSION_TTL_MINUTES: ${WA_SESSION_TTL_MINUTES:-360}

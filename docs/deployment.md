@@ -20,7 +20,7 @@ No PostgreSQL database is required for the current public landing page. Add a
 database only if the product later needs persistent leads, chat history,
 analytics, or admin state.
 
-The chat defaults to `gpt-5.4-nano` with low reasoning effort and low verbosity
+The chat defaults to `gpt-5.6-luna` with low reasoning effort and low verbosity
 to keep a public assistant responsive and inexpensive. Override
 `OPENAI_CHAT_MODEL`, `OPENAI_CHAT_REASONING_EFFORT`, and
 `OPENAI_CHAT_VERBOSITY` in `.env` when you want a different quality, cost, or
@@ -133,11 +133,11 @@ COMPOSE_PROJECT_NAME=zuam
 SHARED_DOCKER_NETWORK=shared_apps
 APP_HOST=your-domain.com
 NEXT_PUBLIC_ZUAM_API_BASE_URL=/api
-NEXT_PUBLIC_OPENAI_CHAT_MODEL_LABEL=GPT-5.4 Nano
+NEXT_PUBLIC_OPENAI_CHAT_MODEL_LABEL=GPT-5.6 Luna
 NEXT_PUBLIC_CHAT_CONTACT_INITIAL_CAPTURE_DELAY_MS=180000
 NEXT_PUBLIC_CHAT_CONTACT_FOLLOWUP_CAPTURE_DELAY_MS=180000
 OPENAI_API_KEY=sk-...
-OPENAI_CHAT_MODEL=gpt-5.4-nano
+OPENAI_CHAT_MODEL=gpt-5.6-luna
 OPENAI_SCOPE_GUARD_ENABLED=true
 OPENAI_OUTPUT_GUARD_ENABLED=true
 CHAT_RATE_LIMIT_PER_MINUTE=12

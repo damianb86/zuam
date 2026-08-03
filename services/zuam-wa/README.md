@@ -90,11 +90,37 @@ logica de juntadas en `tools.mjs`, esta en el lugar equivocado.
 |---|---|
 | `ver_juntada` | "@truco quienes van y que falta?" |
 | `ver_mesas` | "@truco como va la mesa 2?" |
+| `compartir_link` | "@truco pasame el link" |
 | `crear_juntada` | "@truco armemos una el viernes 21hs en lo de Dami" |
+| `editar_juntada` | "@truco cambiale el nombre y ponelo a las 22" |
+| `borrar_juntada` | "@truco borra la juntada" (pide confirmacion) |
 | `anotarme` / `anotar_a` | "@truco anotame y anota a Nacho" |
 | `bajarme` / `bajar_a` | "@truco bajame que no llego" |
-| `agregar_item` / `tomar_item` | "@truco agrega carbon" / "yo llevo el fernet" |
-| `armar_equipos` | "@truco arma los equipos" |
+| `modo_admins` / `hacer_admin` | "@truco hace admin a Nacho" |
+| `agregar_item` / `quitar_item` | "@truco agrega fernet, lo lleva Pepe" |
+| `tomar_item` / `soltar_item` | "yo llevo el hielo" · "las cartas las lleva Tincho" |
+| `repartir_items` | "@truco reparti lo que falta" |
+| `armar_equipos` | "@truco tira los reyes de a 2" |
+| `armar_mesas` | "@truco arma las mesas" |
+| `siguiente_ronda` | "@truco proxima ronda" |
+| `ver_campeon` | "@truco quien va ganando el torneo?" |
+
+**Quien es quien:** cada numero tiene un `device_token` estable, asi que el bot
+sabe siempre quien habla (por el `pushName` del contacto). Por eso "yo llevo el
+fernet" se resuelve solo, y "el fernet lo lleva Nacho" se lo asigna a Nacho —
+aunque Nacho no tenga la app abierta.
+
+## Avisos automaticos
+
+Cada 30s el bot mira la tabla de eventos de la juntada y avisa en el grupo:
+
+- **Partido terminado**, con el marcador y los equipos *con sus jugadores*:
+  `Los Pulpos (Nacho, Pepe) — 30`.
+- **Ronda nueva del torneo**, con todos los cruces.
+
+Son plantillas, sin IA: un resultado no necesita que lo redacte un modelo. La
+linea de base se fija al atar la juntada, asi que atar una ya jugada no vomita
+el historial. Se apaga con `WA_ANNOUNCE=false`.
 
 ## Probar en local
 
@@ -127,6 +153,8 @@ digitos en vez del QR.
 | `WA_MEETUP_BASE_URL` | `https://zuam.com` | Origen de los links `/j/{id}` |
 | `WA_SILENT_REACTIONS` | `true` | Actuar con 👍 en vez de escribir |
 | `WA_RETENTION_DAYS` | `7` | Dias que se guardan los mensajes leidos |
+| `WA_ANNOUNCE` | `true` | Avisar resultados y rondas en el grupo |
+| `WA_ANNOUNCE_SECONDS` | `30` | Cada cuanto busca novedades |
 | `WA_HISTORY_SIZE` | `25` | Mensajes de contexto para el agente |
 | `WA_MAX_TOOL_TURNS` | `4` | Tope de vueltas del loop de herramientas |
 | `WA_ADMIN_TOKEN` | se inventa uno | Token de la interfaz de grupos |

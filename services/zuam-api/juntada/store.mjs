@@ -165,6 +165,67 @@ export async function addParticipants(meetupId, names) {
   return { added: list.length };
 }
 
+// Editar los datos de la juntada (título, fecha, hora, lugar, cupo…).
+// Sólo toca los campos que vienen: lo que no se manda queda como estaba.
+export async function updateMeetup(meetupId, input = {}) {
+  const meetup = await queryOne(`SELECT * FROM juntada_meetups WHERE id=$1`, [meetupId]);
+  if (!meetup) return null;
+
+  const sets = [];
+  const values = [meetupId];
+  const put = (column, value) => {
+    values.push(value);
+    sets.push(`${column}=$${values.length}`);
+  };
+
+  if (input.title !== undefined) put("title", clean(input.title, 80) || meetup.title);
+  if (input.date !== undefined) put("date", isoDate(input.date));
+  if (input.time !== undefined) put("time", isoTime(input.time));
+  if (input.place !== undefined) put("place", clean(input.place, 120));
+  if (input.notes !== undefined) put("notes", clean(input.notes, 500));
+  if (input.durationMin !== undefined) put("duration_min", clampInt(input.durationMin, 30, 1440, 180));
+  if (input.maxPlayers !== undefined) {
+    put("max_players", input.maxPlayers === null || input.maxPlayers === ""
+      ? null
+      : clampInt(input.maxPlayers, 2, 200, null));
+  }
+  if (input.selectionMode !== undefined && SELECTION_MODES.includes(input.selectionMode)) {
+    put("selection_mode", input.selectionMode);
+  }
+
+  if (!sets.length) return { changed: 0 };
+  await query(`UPDATE juntada_meetups SET ${sets.join(", ")} WHERE id=$1`, values);
+  return { changed: sets.length };
+}
+
+// Igual que `toggleClaim` pero en nombre de otro participante, por id. Lo usa
+// el bot de WhatsApp: ahí un admin puede decir "el fernet lo lleva Nacho", y
+// Nacho no tiene por qué tener la app abierta (ni un device_token).
+export async function claimForParticipant(meetupId, participantId, itemId, on = true, detail = "") {
+  const person = await queryOne(
+    `SELECT id FROM juntada_participants WHERE meetup_id=$1 AND id=$2`,
+    [meetupId, participantId],
+  );
+  if (!person) return false;
+
+  const existing = await queryOne(
+    `SELECT id FROM juntada_claims WHERE item_id=$1 AND participant_id=$2`,
+    [itemId, participantId],
+  );
+  const value = clean(detail, 60);
+
+  if (on) {
+    if (existing) await query(`UPDATE juntada_claims SET detail=$2 WHERE id=$1`, [existing.id, value]);
+    else await query(
+      `INSERT INTO juntada_claims (id, meetup_id, item_id, participant_id, detail) VALUES ($1,$2,$3,$4,$5)`,
+      [shortId(10), meetupId, itemId, participantId, value],
+    );
+  } else if (existing) {
+    await query(`DELETE FROM juntada_claims WHERE id=$1`, [existing.id]);
+  }
+  return true;
+}
+
 export async function deleteMeetup(meetupId) {
   // Ítems, participantes, equipos, mesas y eventos caen por ON DELETE CASCADE.
   await query(`DELETE FROM juntada_meetups WHERE id = $1`, [meetupId]);
