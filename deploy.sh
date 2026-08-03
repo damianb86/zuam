@@ -109,8 +109,20 @@ find_shared_env_file() {
   return 1
 }
 
+# El bot de WhatsApp vive en un override aparte. Hay que incluirlo si esta
+# habilitado, porque el `up` de mas abajo usa --remove-orphans: sin esto, cada
+# deploy de Zuam borraria el contenedor del bot y habria que re-escanear el QR.
+compose_files() {
+  echo "-f docker-compose.yml"
+  if [ "$(get_env_value "$APP_ENV_FILE" WA_ENABLED)" = "1" ] && [ -f "$APP_DIR/docker-compose.wa.yml" ]; then
+    echo "-f docker-compose.wa.yml"
+  fi
+}
+
 compose() {
+  # shellcheck disable=SC2046  # se quiere el split en palabras de los -f
   docker compose \
+    $(compose_files) \
     --env-file "$SHARED_ENV_FILE" \
     --env-file "$APP_ENV_FILE" \
     "$@"
@@ -240,5 +252,5 @@ if [ -n "$VERIFY_ENV_VARS" ]; then
   done
 fi
 
-compose ps static api
+compose ps
 echo "Deploy complete."

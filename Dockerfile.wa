@@ -1,0 +1,27 @@
+# Bot de WhatsApp de las juntadas (servicio "wa").
+#
+# Va aparte del servicio `api` a proposito: Baileys mantiene una sesion con
+# estado (el dispositivo enlazado) y no puede reiniciarse en cada deploy sin
+# perder la vinculacion. Tiene su propio package.json para no meter sus
+# dependencias en el contenedor de la API.
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY services/zuam-wa/package.json services/zuam-wa/package-lock.json* ./services/zuam-wa/
+RUN cd services/zuam-wa && npm install --omit=dev
+
+COPY services/zuam-wa ./services/zuam-wa
+# El bot reusa la logica de juntadas (`store.mjs`, `db.mjs`) en vez de
+# duplicarla o hablarle por HTTP a la API. Se copia respetando la estructura
+# para que los imports relativos sean los mismos que en local.
+COPY services/zuam-api/juntada ./services/zuam-api/juntada
+
+# Las credenciales viven en un volumen: si se pierden, hay que re-escanear.
+ENV WA_AUTH_DIR=/data/auth
+VOLUME ["/data"]
+
+CMD ["node", "services/zuam-wa/bot.mjs"]

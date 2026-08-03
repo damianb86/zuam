@@ -1,0 +1,24 @@
+{
+  "name": "zuam-wa",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Bot de WhatsApp de las juntadas de truco (Fase 0: spike de conexion).",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node bot.mjs",
+    "dev": "node --env-file-if-exists=../../.env --env-file-if-exists=../../.env.local bot.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:db": "JUNTADA_DATABASE_URL=${JUNTADA_DATABASE_URL:-postgresql://$USER@localhost:5432/wa_test} node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "baileys": "6.7.24",
+    "pg": "^8.22.0",
+    "pino": "^9.0.0",
+    "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0"
+  }
+}

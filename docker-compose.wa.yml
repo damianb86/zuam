@@ -1,0 +1,62 @@
+# Override opcional para el bot de WhatsApp (Fase 0).
+#
+# Se levanta aparte, a proposito: todavia es un spike y no debe poder tirar
+# abajo el stack de produccion.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.wa.yml up -d wa
+#   docker compose -f docker-compose.yml -f docker-compose.wa.yml logs -f wa
+#
+# La primera vez hay que ver los logs para escanear el QR (o leer el codigo
+# de vinculacion si se configuro WA_PAIRING_NUMBER).
+
+services:
+  wa:
+    build:
+      context: .
+      dockerfile: Dockerfile.wa
+    env_file:
+      - .env
+    restart: unless-stopped
+    init: true
+    # Sin `expose` ni labels de Caddy: el bot no recibe trafico de afuera.
+    environment:
+      NODE_ENV: production
+      # Misma base que las juntadas: el bot lee y escribe las mismas tablas.
+      JUNTADA_DATABASE_URL: ${JUNTADA_DATABASE_URL:?El bot necesita la base de las juntadas}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?Set OPENAI_API_KEY in the app .env}
+      WA_OPENAI_MODEL: ${WA_OPENAI_MODEL:-gpt-5.6-luna}
+      WA_OPENAI_MAX_OUTPUT_TOKENS: ${WA_OPENAI_MAX_OUTPUT_TOKENS:-500}
+      WA_OPENAI_REASONING_EFFORT: ${WA_OPENAI_REASONING_EFFORT:-low}
+      WA_MEETUP_BASE_URL: ${WA_MEETUP_BASE_URL:-https://zuam.com}
+      WA_SILENT_REACTIONS: ${WA_SILENT_REACTIONS:-true}
+      WA_RETENTION_DAYS: ${WA_RETENTION_DAYS:-7}
+      WA_TRIGGERS: ${WA_TRIGGERS:-@truco,@bot,@juntada}
+      WA_DISMISSALS: ${WA_DISMISSALS:-listo,gracias,chau,ya esta,nada mas}
+      WA_SESSION_TTL_MINUTES: ${WA_SESSION_TTL_MINUTES:-360}
+      WA_ALLOW_DIRECT: ${WA_ALLOW_DIRECT:-false}
+      WA_ADMIN_TOKEN: ${WA_ADMIN_TOKEN:?Ponele un token a la interfaz de grupos}
+      WA_ADMIN_PORT: ${WA_ADMIN_PORT:-3210}
+      WA_AMBIENT: ${WA_AMBIENT:-true}
+      WA_AMBIENT_MIN_MESSAGES: ${WA_AMBIENT_MIN_MESSAGES:-4}
+      WA_AMBIENT_COOLDOWN_MINUTES: ${WA_AMBIENT_COOLDOWN_MINUTES:-10}
+      WA_ALLOW_SELF: ${WA_ALLOW_SELF:-true}
+      WA_LOG_MESSAGE_TEXT: ${WA_LOG_MESSAGE_TEXT:-true}
+      WA_PAIRING_NUMBER: ${WA_PAIRING_NUMBER:-}
+      WA_LOG_LEVEL: ${WA_LOG_LEVEL:-warn}
+      WA_MAX_MESSAGE_AGE_SECONDS: ${WA_MAX_MESSAGE_AGE_SECONDS:-120}
+    # Solo desde la maquina del servidor: aca se decide que chats lee el bot.
+    # Para abrirla desde tu compu: ssh -L 3210:localhost:3210 usuario@servidor
+    ports:
+      - "127.0.0.1:${WA_ADMIN_PORT:-3210}:${WA_ADMIN_PORT:-3210}"
+    volumes:
+      - wa_auth:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: ${DOCKER_LOG_MAX_SIZE:-10m}
+        max-file: ${DOCKER_LOG_MAX_FILE:-5}
+    networks:
+      - shared_apps
+
+volumes:
+  wa_auth:

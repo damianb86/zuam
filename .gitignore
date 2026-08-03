@@ -13,3 +13,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .DS_Store
+
+# Bot de WhatsApp: credenciales del dispositivo enlazado. Nunca commitear.
+services/zuam-wa/.wa-auth

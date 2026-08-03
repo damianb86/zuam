@@ -9,3 +9,6 @@ yarn-error.log*
 .env*.local
 .DS_Store
 **/.DS_Store
+
+# Credenciales del bot de WhatsApp: viven en un volumen, no en la imagen.
+services/zuam-wa/.wa-auth
