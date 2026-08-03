@@ -11,8 +11,13 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY services/zuam-wa/package.json services/zuam-wa/package-lock.json* ./services/zuam-wa/
-RUN cd services/zuam-wa && npm install --omit=dev
+# Las dependencias van en /app/node_modules, NO en services/zuam-wa/, porque el
+# bot importa `juntada/db.mjs`, que vive en services/zuam-api/ y hace
+# `import pg`. Node resuelve subiendo directorios desde el archivo que importa:
+# desde services/zuam-api/juntada/ nunca miraria services/zuam-wa/node_modules.
+# En local no se nota porque el repo tiene su propio node_modules con `pg`.
+COPY services/zuam-wa/package.json services/zuam-wa/package-lock.json* ./
+RUN npm install --omit=dev
 
 COPY services/zuam-wa ./services/zuam-wa
 # El bot reusa la logica de juntadas (`store.mjs`, `db.mjs`) en vez de
