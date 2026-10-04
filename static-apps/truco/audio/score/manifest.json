@@ -36,6 +36,8 @@
     "a": "a",
     "dealer": "Reparte jugador",
     "minus": "menos",
-    "total": "Total"
+    "total": "Total",
+    "punta-start": "Punta y hacha",
+    "punta-end": "Fin de punta y hacha"
   }
 }
