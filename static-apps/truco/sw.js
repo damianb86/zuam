@@ -1,7 +1,7 @@
-const CACHE = "la-casita-v45-team-draw";
+const CACHE = "la-casita-v46-glass-seats";
 const BASE = "/truco";
 // Las cartas se guardan al usarse. Evitamos descargar ~60 MB durante la instalación de la PWA.
-const CORE = [`${BASE}/`, `${BASE}/manifest.webmanifest`, `${BASE}/app-icon-192.png`, `${BASE}/app-icon-512.png`, `${BASE}/apple-touch-icon.png`, `${BASE}/favicon-32.png`, `${BASE}/splash-mobile.png`, `${BASE}/table/table-4.png`, `${BASE}/table/table-6.png`, `${BASE}/table/deck.png`, `${BASE}/table/name-wood.png`];
+const CORE = [`${BASE}/`, `${BASE}/manifest.webmanifest`, `${BASE}/app-icon-192.png`, `${BASE}/app-icon-512.png`, `${BASE}/apple-touch-icon.png`, `${BASE}/favicon-32.png`, `${BASE}/splash-mobile.png`, `${BASE}/table/table-4.png`, `${BASE}/table/table-6.png`, `${BASE}/table/deck.png`];
 const SCORE_AUDIO = [...Array.from({length:31},(_,n) => `${BASE}/audio/score/${n}.mp3`), `${BASE}/audio/score/a.mp3`, `${BASE}/audio/score/dealer.mp3`, `${BASE}/audio/score/minus.mp3`, `${BASE}/audio/score/total.mp3`, `${BASE}/audio/score/punta-start.mp3`, `${BASE}/audio/score/punta-end.mp3`];
 self.addEventListener("install", (event) => event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll([...CORE, ...SCORE_AUDIO])).then(() => self.skipWaiting())));
 self.addEventListener("activate", (event) => event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))).then(() => self.clients.claim())));
